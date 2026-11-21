@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IdleOn Cooking Planner</title>
+<meta name="description" content="Plan Legends of Idleon cooking: which meal to level next, how to discover new recipes (spices, kitchen, fire level, time) and what to spend meals on.">
+<link rel="icon" href="img/favicon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#f3f4f8; --panel:#ffffff; --panel2:#f7f8fb; --ink:#1b1f33; --muted:#666c86; --line:#dcdfea;
+  --gold:#b98200; --gold-bg:#fff1c7; --ok:#1f8a55; --ok-bg:#d9f2e4; --bad:#c4391a; --bad-bg:#fde0d6;
+  --blue:#2f63c8; --blue-bg:#dfe8fb; --slot:#2b3140; --slot2:#363d4f; --slot-line:#4a5266;
+  --display:"Chakra Petch",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1020; --panel:#151a30; --panel2:#11162a; --ink:#e6e8f4; --muted:#9097b3; --line:#262c48;
+  --gold:#ffcb45; --gold-bg:#3b3112; --ok:#5fd394; --ok-bg:#143326; --bad:#ff8a6b; --bad-bg:#3d1c14;
+  --blue:#8fb2ff; --blue-bg:#1b2648; --slot:#1d2233; --slot2:#262c40; --slot-line:#353d58; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1020; --panel:#151a30; --panel2:#11162a; --ink:#e6e8f4; --muted:#9097b3; --line:#262c48;
+  --gold:#ffcb45; --gold-bg:#3b3112; --ok:#5fd394; --ok-bg:#143326; --bad:#ff8a6b; --bad-bg:#3d1c14;
+  --blue:#8fb2ff; --blue-bg:#1b2648; --slot:#1d2233; --slot2:#262c40; --slot-line:#353d58; color-scheme:dark}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+[hidden]{display:none!important}
+.wrap{max-width:1440px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1 small{font-family:var(--body);font-weight:400;font-size:14px;color:var(--muted);margin-left:8px}
+h2{font-family:var(--display);font-weight:700;font-size:18px;margin:0;letter-spacing:.02em}
+h3.sub{font-family:var(--display);font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lang button{background:transparent;color:var(--muted);border-radius:0;padding:4px 10px;font:600 12px var(--mono)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:10px;min-width:0;align-content:start}
+.card-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.card-head h2{margin-right:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#nick,input.num,select{font:500 14px var(--mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 10px;max-width:100%}
+#nick{width:220px}
+input.num{width:96px;padding:4px 6px;text-align:right}
+select{font-family:var(--body);padding:5px 8px}
+.hint{font-size:12.5px;color:var(--muted);flex:1 1 260px;min-width:0;margin:0}
+.hint a,.foot a,.note a{color:inherit}
+.or{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+textarea{width:100%;height:56px;resize:vertical;font-family:var(--mono);font-size:12px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px}
+button,.file{font:500 13px var(--body);background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:7px 12px;cursor:pointer}
+button:disabled{opacity:.6;cursor:progress}
+.ghost,.file{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.file{position:relative}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+button:focus-visible,.file:focus-within,textarea:focus-visible,input:focus-visible,select:focus-visible,label.chk:focus-within{outline:2px solid var(--gold);outline-offset:2px}
+.msg{font-size:13px;color:var(--muted)} .msg.err{color:var(--bad)}
+label.chk{font-size:13px;display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
+.stat b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12.5px;margin-left:4px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.note b{color:var(--ink)}
+.tabsbar{display:flex;flex-wrap:wrap;gap:6px}
+.tabsbar button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);font:600 13px var(--body)}
+.tabsbar button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* game sprites: integer scale only, pixelated */
+.sp{display:inline-block;flex:none;vertical-align:middle;background-repeat:no-repeat;image-rendering:pixelated;
+  width:calc(var(--w) * var(--k) * 1px);height:calc(var(--h) * var(--k) * 1px);
+  background-size:calc(var(--cols) * var(--w) * var(--k) * 1px) auto;
+  background-position:calc(var(--x) * var(--w) * var(--k) * -1px) calc(var(--y) * var(--h) * var(--k) * -1px)}
+.sp.meal{background-image:url(img/meals.png)} .sp.spice{background-image:url(img/spices.png)}
+.sp.ribbon{background-image:url(img/ribbons.png)} .sp.fire{background-image:url(img/fire.png)}
+.ladle{width:72px;height:72px;margin:-18px -12px;image-rendering:pixelated;vertical-align:middle}
+.dim{opacity:.4;filter:grayscale(.7)}
+
+/* spices strip */
+.spices{display:flex;flex-wrap:wrap;gap:4px}
+.spi{display:inline-flex;align-items:center;gap:2px;padding:1px 8px 1px 1px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;font:600 12px var(--mono)}
+.spi.locked{opacity:.45;border-style:dashed}
+
+/* kitchens */
+.kits{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:8px}
+.kit{background:var(--slot);color:#e6e8f4;border:1px solid var(--slot-line);border-radius:8px;padding:8px 10px;display:grid;gap:6px;min-width:0}
+.kit.rich{border-color:#ffcb45;box-shadow:inset 0 0 0 1px #ffcb45}
+.kit.locked{opacity:.55;border-style:dashed}
+.kit .hd{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.kit .hd b{font-family:var(--display);font-size:15px}
+.kit .st{font-size:12px;color:#aab2c8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:34px}
+.kit .ups{display:grid;grid-template-columns:auto auto 1fr auto;gap:2px 8px;align-items:center;font:500 12px var(--mono)}
+.kit .ups .c{color:#aab2c8;text-align:right;white-space:nowrap}
+.kit .ups .c.no{color:#ff8a6b}
+.kit .ups .c.yes{color:#7ee0a8}
+.kit .rates{display:flex;flex-wrap:wrap;gap:2px 12px;font:600 12px var(--mono);color:#ffcb45}
+.kit .rates span{color:#aab2c8;font-weight:400}
+.tag{font:600 10.5px var(--mono);padding:0 5px;border-radius:3px;background:#ffcb45;color:#1b1f33}
+
+/* tables */
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:500;font-size:12px;color:var(--muted);position:sticky;top:0;background:var(--panel);z-index:1}
+th.l,td.l{text-align:left}
+td.nm{white-space:normal;min-width:190px}
+.nmw{display:flex;gap:8px;align-items:center}
+.nmw small{display:block;color:var(--muted);font-size:11.5px}
+td.num{font-family:var(--mono);font-size:13px}
+td.wrap{white-space:normal;min-width:180px}
+tr.locked td{opacity:.5}
+tr.best td{background:var(--gold-bg)}
+.chip{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;font-family:var(--mono)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.info{background:var(--blue-bg);color:var(--blue)} .chip.gold{background:var(--gold-bg);color:var(--gold)}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar.part i{background:var(--gold)}
+.combo{display:inline-flex;gap:2px;align-items:center;background:var(--slot);border-radius:5px;padding:2px 4px}
+.plates{display:inline-flex;gap:3px;align-items:flex-end}
+.plates .pm{display:inline-flex;flex-direction:column;align-items:center;border-radius:4px;padding:1px}
+.plates .pm.known>span{opacity:.35;filter:grayscale(.8)}
+.plates .pm.tgt{box-shadow:inset 0 0 0 2px var(--gold);background:var(--gold-bg)}
+.plates .pm i{font:600 9.5px var(--mono);font-style:normal;color:var(--muted)}
+
+/* settings */
+.set{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:10px}
+.setbox{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:grid;gap:6px;align-content:start}
+.setbox label{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.setbox .note{font-size:12px}
+
+/* plan */
+ol.plan{margin:0;padding:0;list-style:none;display:grid;gap:4px;counter-reset:st}
+ol.plan li{display:grid;grid-template-columns:28px auto minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:3px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;counter-increment:st}
+ol.plan li::before{content:counter(st);font:600 12px var(--mono);color:var(--muted)}
+ol.plan li.spd{border-color:var(--blue)}
+ol.plan .w{min-width:0}
+ol.plan .w small{display:block;color:var(--muted);font-size:11.5px}
+ol.plan .t{font:600 12.5px var(--mono);text-align:right}
+ol.plan .t small{display:block;color:var(--muted);font-weight:400}
+.tips{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px}
+.tips b{font-family:var(--mono);font-weight:600}
+
+#tip{position:fixed;z-index:20;width:340px;max-width:calc(100vw - 16px);background:var(--ink);color:var(--bg);border-radius:6px;padding:8px 10px;font-size:12.5px;line-height:1.4;pointer-events:none;box-shadow:0 6px 20px rgb(0 0 0 / .25)}
+#tip .hd{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+#tip .hd b{font-family:var(--display);font-size:14px;line-height:1.2}
+#tip .t{opacity:.75;font-size:11.5px}
+.foot{font-size:12.5px;color:var(--muted);max-width:90ch;margin:0}
+@media (max-width:560px){ol.plan li{grid-template-columns:22px auto minmax(0,1fr)}ol.plan .t{grid-column:2/4;text-align:left}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span data-i="title"></span> <small data-i="subtitle"></small></h1>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <form class="row" id="nickForm">
+      <input id="nick" type="text" autocomplete="username" spellcheck="false" aria-labelledby="nickBtn">
+      <button id="nickBtn" type="submit" data-i="nick_btn"></button>
+      <span class="hint" data-i="nick_hint"></span>
+    </form>
+    <div class="or" data-i="or"></div>
+    <textarea id="save" spellcheck="false" aria-label="Save JSON"></textarea>
+    <div class="row">
+      <button id="go" type="button" data-i="parse"></button>
+      <label class="file"><span data-i="open"></span><input id="file" type="file" accept=".json,.txt,application/json,text/plain"></label>
+      <button id="forget" type="button" class="ghost" data-i="forget"></button>
+      <label class="chk"><input type="checkbox" id="showLocked"><span data-i="show_locked"></span></label>
+      <span id="msg" class="msg" role="status"></span>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <section class="card" aria-labelledby="h-set">
+    <div class="card-head"><h2 id="h-set" data-i="settings"></h2></div>
+    <div class="set">
+      <div class="setbox">
+        <label><span data-i="s_spd"></span><input id="spdMul" class="num" type="number" min="0" step="any"></label>
+        <label><span data-i="s_calib"></span><select id="calK"></select><input id="calV" class="num" type="number" min="0" step="any" placeholder="/hr"><button type="button" class="ghost" id="calGo" data-i="s_apply"></button></label>
+        <p class="note" data-i="s_spd_note"></p>
+      </div>
+      <div class="setbox">
+        <label><span data-i="s_fire"></span><input id="fireMul" class="num" type="number" min="0" step="any"></label>
+        <label><span data-i="s_calib_f"></span><select id="calKf"></select><input id="calVf" class="num" type="number" min="0" step="any" placeholder="/hr"><button type="button" class="ghost" id="calGof" data-i="s_apply"></button></label>
+        <p class="note" data-i="s_fire_note"></p>
+      </div>
+      <div class="setbox">
+        <label><span data-i="s_max"></span><input id="maxLv" class="num" type="number" min="1" step="1"></label>
+        <label><span data-i="s_bm"></span><input id="bonusMul" class="num" type="number" min="0" step="any"></label>
+        <label class="chk"><input type="checkbox" id="useRecipeKitchens"><span data-i="s_rk"></span></label>
+        <p class="note" id="setNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-kit">
+    <div class="card-head"><h2 id="h-kit" data-i="kitchens"></h2></div>
+    <div class="spices" id="spices"></div>
+    <div class="kits" id="kits"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-plan">
+    <div class="card-head">
+      <h2 id="h-plan" data-i="plan"></h2>
+      <label><span data-i="goal"></span> <select id="goal"></select></label>
+      <label><span data-i="steps"></span> <input id="steps" class="num" type="number" min="1" max="200" step="1" value="15"></label>
+      <label class="chk"><input type="checkbox" id="mixSpeed" checked><span data-i="mix_speed"></span></label>
+    </div>
+    <p class="note" id="planNote"></p>
+    <ol class="plan" id="planList"></ol>
+  </section>
+
+  <section class="card" aria-labelledby="h-meals">
+    <div class="card-head">
+      <h2 id="h-meals" data-i="meals"></h2>
+      <label><span data-i="filter"></span> <select id="cat"></select></label>
+    </div>
+    <div class="tablebox"><table id="mealTbl"></table></div>
+    <p class="note" data-i="meals_note"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-disc">
+    <div class="card-head">
+      <h2 id="h-disc" data-i="disc"></h2>
+      <label><span data-i="disc_k"></span> <select id="discK"></select></label>
+    </div>
+    <div id="discNow"></div>
+    <h3 class="sub" data-i="disc_targets"></h3>
+    <div class="tablebox"><table id="discTbl"></table></div>
+    <h3 class="sub" data-i="disc_any"></h3>
+    <div class="tablebox"><table id="anyTbl"></table></div>
+    <p class="note" data-i="disc_note"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-adv">
+    <div class="card-head"><h2 id="h-adv" data-i="advice"></h2></div>
+    <ul class="tips" id="tips"></ul>
+    <h3 class="sub" data-i="jewels"></h3>
+    <div class="tablebox"><table id="jewTbl"></table></div>
+    <h3 class="sub" data-i="chips"></h3>
+    <div class="tablebox"><table id="chipTbl"></table></div>
+  </section>
+
+  <p class="foot" data-i="foot"></p>
+</div>
+<div id="tip" hidden></div>
+<script>
+const D = {"build":"26365625","spr":{"meal":{"w":41,"h":32,"cols":10},"spice":{"w":36,"h":36,"cols":8},"ribbon":{"w":42,"h":41,"cols":7},"fire":{"w":37,"h":26,"cols":12}},"meals":[{"en":"Turkey of Thank","ru":"Индейка благодарения","req":10,"base":2,"d":"+{% Total Damage","dru":"+{% общего урона","cat":"TotDmg"},{"en":"Egg","ru":null,"req":15,"base":5,"d":"+{% Meal Cooking Speed","dru":"+{% скорости готовки блюд","cat":"Mcook"},{"en":"Salad","ru":null,"req":25,"base":3,"d":"+{% Cash from Monsters","dru":"+{% денег с монстров","cat":"Cash"},{"en":"Pie","ru":null,"req":40,"base":5,"d":"+{% Recipe Cooking Spd","dru":"+{% к скорости готовки рецептов","cat":"Rcook"},{"en":"Frenk Fries","ru":"Картошка фрё","req":60,"base":5,"d":"+{% New Mob Breed Odds","dru":"+{% к шансу вывести нового питомца","cat":"Npet"},{"en":"Spaghetti","ru":null,"req":90,"base":4,"d":"+{% Breeding EXP","dru":"+{% опыта разведения","cat":"BrExp"},{"en":"Corn","ru":null,"req":125,"base":2,"d":"+{% Skill Efficiency","dru":"+{% эфф. навыков","cat":"Seff"},{"en":"Garlic Bread","ru":"Чесночный хлеб","req":175,"base":4,"d":"+{% VIP Library PTS","dru":"+{% очков VIP-библиотеки","cat":"VIP"},{"en":"Garlicles Bread","ru":"Хлеб без чеснока","req":250,"base":2,"d":"+{% Lab EXP","dru":"+{% опыта лаборатории","cat":"Lexp"},{"en":"Pizza","ru":null,"req":350,"base":9,"d":"+{% New Mob Breed Odds","dru":"+{% к шансу вывести нового питомца","cat":"Npet"},{"en":"Apple","ru":null,"req":500,"base":5,"d":"+{ Base DEF","dru":"+{ базовой защиты","cat":"Def"},{"en":"Pancakes","ru":null,"req":700,"base":2,"d":"+{Px Line Width in Lab","dru":"+{пкс ширины линии в лаборатории","cat":"PxLine"},{"en":"Corndog","ru":null,"req":1000,"base":12,"d":"+{% Meal Cooking Speed","dru":"+{% скорости готовки блюд","cat":"Mcook"},{"en":"Cabbage","ru":null,"req":1400,"base":5,"d":"+{% Cooking Spd per Ten","dru":"+{% к скорости готовки за десяток","cat":"KitchenEff"},{"en":"Potato P Pastry","ru":"Пирожок П с картошкой","req":2000,"base":1,"d":"+{% Lower Egg Creation Time","dru":"+{% меньше время создания яиц","cat":"TimeEgg"},{"en":"Dango","ru":null,"req":3000,"base":2,"d":"+{% Lower Kitchen Costs","dru":"+{% дешевле кухня","cat":"KitchC"},{"en":"Sourish Fish","ru":"Кисловатая рыба","req":4000,"base":4,"d":"+{% VIP Library PTS","dru":"+{% очков VIP-библиотеки","cat":"VIP"},{"en":"Octoplop","ru":null,"req":5000,"base":2,"d":"+{% Total Damage","dru":"+{% общего урона","cat":"TotDmg"},{"en":"Croissant","ru":null,"req":8000,"base":1,"d":"+{% Mob Fighting Damage","dru":"+{% урона питомцев в бою","cat":"PetDmg"},{"en":"Canopy","ru":null,"req":12500,"base":10,"d":"+{% Recipe Cooking Spd","dru":"+{% к скорости готовки рецептов","cat":"Rcook"},{"en":"Cannoli","ru":null,"req":20000,"base":1,"d":"+{% PTS in Tower Defence","dru":"+{% очков в защите башен","cat":"TDpts"},{"en":"Cheese","ru":null,"req":35000,"base":5,"d":"+{% Cooking EXP","dru":"+{% опыта готовки","cat":"CookExp"},{"en":"Sawdust","ru":null,"req":50000,"base":5,"d":"+{% Lab EXP","dru":"+{% опыта лаборатории","cat":"Lexp"},{"en":"Eggplant","ru":null,"req":75000,"base":5,"d":"+{% Mob Breedability Rate","dru":"+{% к скорости плодовитости питомцев","cat":"Breed"},{"en":"Cheesy Bread","ru":"Сырный хлеб","req":110000,"base":1,"d":"+{% Total Accuracy","dru":"+{% общей меткости","cat":"TotAcc"},{"en":"Wild Boar","ru":null,"req":200000,"base":2,"d":"+{Px Line Width in Lab","dru":"+{пкс ширины линии в лаборатории","cat":"PxLine"},{"en":"Donut","ru":null,"req":300000,"base":15,"d":"+{% New Mob Breed Odds","dru":"+{% к шансу вывести нового питомца","cat":"Npet"},{"en":"Riceball","ru":null,"req":500000,"base":3,"d":"+{% Skill Efficiency","dru":"+{% эфф. навыков","cat":"Seff"},{"en":"Cauliflower","ru":null,"req":750000,"base":1,"d":"+{% Basic Atk Speed","dru":"+{% к скорости базовой атаки","cat":"AtkSpd"},{"en":"Durian Fruit","ru":"Дуриан","req":1000000,"base":6,"d":"+{% Lower Kitchen costs","dru":"+{% дешевле кухня","cat":"KitchC"},{"en":"Orange","ru":null,"req":1500000,"base":3,"d":"+{% VIP Library PTS","dru":"+{% очков VIP-библиотеки","cat":"VIP"},{"en":"Bunt Cake","ru":"Кекс-бундт","req":3000000,"base":7,"d":"+{% Cash from Monsters","dru":"+{% денег с монстров","cat":"Cash"},{"en":"Chocala Truffle","ru":"Шокола-трюфель","req":5000000,"base":25,"d":"+{% New Mob Breed Odds","dru":"+{% к шансу вывести нового питомца","cat":"Npet"},{"en":"Leek","ru":null,"req":8000000,"base":2,"d":"+{% skilling prowess","dru":"+{% мастерства навыков","cat":"Sprow"},{"en":"Fortune Cookie","ru":"Печенье с предсказанием","req":12000000,"base":4,"d":"+{% Library Checkout Spd","dru":"+{% к скорости выдачи книг","cat":"Lib"},{"en":"Pretzel","ru":null,"req":20000000,"base":7,"d":"+{% Lab EXP","dru":"+{% опыта лаборатории","cat":"Lexp"},{"en":"Sea Urchin","ru":"Морской ёж","req":30000000,"base":1,"d":"+{% Critters from traps","dru":"+{% зверьков из ловушек","cat":"Critter"},{"en":"Mashed Potato","ru":null,"req":40000000,"base":6,"d":"+{% Cooking EXP","dru":"+{% опыта готовки","cat":"CookExp"},{"en":"Mutton","ru":null,"req":90000000,"base":1,"d":"+{% Crit Chance","dru":"+{% шанса крита","cat":"Crit"},{"en":"Wedding Cake","ru":"Свадебный торт","req":135000000,"base":2,"d":"+{% Mob Fighting Damage","dru":"+{% урона питомцев в бою","cat":"PetDmg"},{"en":"Eel","ru":null,"req":200000000,"base":1,"d":"+{% Line Width in Lab","dru":"+{% ширины линии в лаборатории","cat":"LinePct"},{"en":"Whipped Cocoa","ru":"Взбитое какао","req":300000000,"base":4,"d":"+{% Skill Efficiency","dru":"+{% эфф. навыков","cat":"Seff"},{"en":"Onion","ru":null,"req":500000000,"base":3,"d":"+{% Total Damage","dru":"+{% общего урона","cat":"TotDmg"},{"en":"Soda","ru":null,"req":700000000,"base":20,"d":"+{% Meal Cooking Speed","dru":"+{% скорости готовки блюд","cat":"Mcook"},{"en":"Sushi Roll","ru":"Суши-ролл","req":900000000,"base":7,"d":"+{% VIP Library PTS","dru":"+{% очков VIP-библиотеки","cat":"VIP"},{"en":"Buncha Banana","ru":"Куча бананов","req":1250000000,"base":4,"d":"+{ Max LVs for TPPST","dru":"+{ макс. ур. для ЗТПП","cat":"TPpete"},{"en":"Pumpkin","ru":null,"req":1700000000,"base":2,"d":"+{% Liquid Cap","dru":"+{% к пределу жидкости","cat":"Liquid12"},{"en":"Cotton Candy","ru":"Сахарная вата","req":4000000000,"base":2,"d":"+{% Divinity EXP","dru":"+{% опыта божественности","cat":"DivExp"},{"en":"Massive Fig","ru":"Огромный инжир","req":7000000000,"base":3,"d":"+{% Total Damage","dru":"+{% общего урона","cat":"TotDmg"},{"en":"Chef Geustloaf","ru":"Шеф Гостьбатон","req":10000000000,"base":4,"d":"+{% Bits Gain in Gaming","dru":"+{% битов в гейминге","cat":"GamingBits"},{"en":"Kiwi Fruit","ru":"Киви","req":14000000000,"base":2,"d":"+{% Liquid Cap","dru":"+{% к пределу жидкости","cat":"Liquid34"},{"en":"Popped Corn","ru":"Лопнувшая кукуруза","req":20000000000,"base":2,"d":"+{% Sailing Speed","dru":"+{% скорости плавания","cat":"Sailing"},{"en":"Double Cherry","ru":"Двойная вишня","req":32000000000,"base":30,"d":"+{% Meal Cooking Spd","dru":"+{% к скорости готовки блюд","cat":"Mcook"},{"en":"Ratatouey","ru":null,"req":52000000000,"base":8,"d":"+{% Lower Kitchen costs","dru":"+{% дешевле кухня","cat":"KitchC"},{"en":"Giant Tomato","ru":"Гигантский помидор","req":90000000000,"base":5,"d":"+{% Gaming EXP","dru":"+{% опыта гейминга","cat":"GamingExp"},{"en":"Wrath Grapes","ru":"Гроздья гнева","req":130000000000,"base":4,"d":"+{% Divinity EXP","dru":"+{% опыта божественности","cat":"DivExp"},{"en":"Sausy Sausage","ru":"Сосиска в соусе","req":225000000000,"base":6,"d":"+{% Bits Gain in Gaming","dru":"+{% битов в гейминге","cat":"GamingBits"},{"en":"Seasoned Marrow","ru":"Пряный костный мозг","req":350000000000,"base":3,"d":"+{% Farming EXP","dru":"+{% опыта фермерства","cat":"zFarmExp"},{"en":"Sticky Bun","ru":"Липкая булочка","req":700000000000,"base":5,"d":"+{% Essence Gain","dru":"+{% эссенции","cat":"zSumEss"},{"en":"Frazzleberry","ru":null,"req":1000000000000,"base":2,"d":"+{% Sneaking EXP","dru":"+{% опыта скрытности","cat":"zSneakExp"},{"en":"MrLoin Steak","ru":"Стейк МистерВырезка","req":1700000000000,"base":6,"d":"+{% Jade Gain","dru":"+{% нефрита","cat":"zJade"},{"en":"Large Pohayoh","ru":"Большая картоха","req":6000000000000,"base":2,"d":"+{% Summoning EXP","dru":"+{% опыта призыва","cat":"zSummonExp"},{"en":"Bill Jack Pep","ru":"Билл Джек Пеп","req":35000000000000,"base":5,"d":"+{% Crop Evo Chance","dru":"+{% к шансу эволюции культур","cat":"zCropEvo"},{"en":"Burned Mello","ru":"Подгоревший маршмеллоу","req":90000000000000,"base":40,"d":"+{% Meal Cooking Spd","dru":"+{% к скорости готовки блюд","cat":"zMealFarm"},{"en":"Yumi Peachring","ru":"Персиковое колечко Юми","req":800000000000000,"base":2,"d":"+{% Gold Food bonus","dru":"+{% к бонусу золотой еды","cat":"zGoldFood"},{"en":"Plumpcakes","ru":null,"req":6000000000000000.0,"base":6,"d":"+{% Total Damage","dru":"+{% общего урона","cat":"TotDmg"},{"en":"Nyanborgir","ru":null,"req":5e+16,"base":9,"d":"+{% Crop Evo Chance","dru":"+{% к шансу эволюции культур","cat":"zCropEvoSumm"},{"en":"Tempura Shrimp","ru":"Креветка темпура","req":2.5e+43,"base":0.07,"d":"+{% Spelunking EXP","dru":"+{% опыта спелеологии","cat":"SplkExp"},{"en":"Woahtermelon","ru":null,"req":5e+48,"base":0.03,"d":"+{% lower Spelunk costs","dru":"+{% дешевле спелеология","cat":"SplkUpg"},{"en":"Cookies","ru":null,"req":8.8888e+53,"base":0.3,"d":"+{% Spelunking POW","dru":"+{% СИЛЫ спелеологии","cat":"SplkPOW"},{"en":"Singing Seed","ru":"Поющее семечко","req":1e+59,"base":0.2,"d":"+{% Amber from Spelunking","dru":"+{% янтаря из спелеологии","cat":"SplkAmb"},{"en":"Tasty Treat","ru":"Вкусняшка","req":1e+61,"base":0.01,"d":"+{% Polymer Refinery Spd","dru":"+{% к скорости переработки полимеров","cat":"PolyRefSpd"},{"en":"Giga Chip","ru":"Гига-чипс","req":1e+64,"base":0.01,"d":"+{% Research EXP","dru":"+{% опыта исследований","cat":"ResearchXP"},{"en":"Divorce Cake","ru":"Торт в честь развода","req":1e+66,"base":0.02,"d":"+{% Mine Currency gain","dru":"+{% шахтной валюты","cat":"MineCurr"}],"spices":[{"en":"The Grass Gang","ru":"Травяная банда"},{"en":"The Carrot Crew","ru":"Морковная команда"},{"en":"Big Boy Plank and the Gs","ru":"Большой Доска и пацаны"},{"en":"Branchial Heirarchy","ru":"Ветвистая иерархия"},{"en":"Dr. Def, phD MD","ru":"Доктор Деф, к.н., д.м."},{"en":"Confetti Cake Brigade","ru":"Бригада тортов с конфетти"},{"en":"The Giant Grumblo","ru":"Гигантский Грумбло"},{"en":"The Beach Boys","ru":"Пляжные парни"},{"en":"The Sands of Time","ru":"Пески времени"},{"en":"The Dungeoneering Duo","ru":"Дуэт подземельщиков"},{"en":"The Stray Flock","ru":"Бродячая стая"},{"en":"The Permafrost Brothers","ru":"Братья Вечная Мерзлота"},{"en":"The Coolest Beats","ru":"Самые крутые биты"},{"en":"The Cursed Shepherd Boy","ru":"Проклятый пастушок"},{"en":"The Blue Jeans Group","ru":"Группа «Синие джинсы»"},{"en":"The Big Fissure Wurm","ru":"Большой расщелинный червь"},{"en":"Calamity Clammies","ru":"Моллюски-катастрофа"},{"en":"The Suggma Ballers","ru":"Суггма-болеры"},{"en":"The Juicer Gang","ru":"Банда соковыжималок"},{"en":"The Ultrawurm et All","ru":"Ультрачервь и компания"},{"en":"The Dihydrogen Monoxiders","ru":"Монооксидигидрогенщики"},{"en":"Mama Mia and the Babbies","ru":"Мамма Миа и детишки"},{"en":"Mr Johnson's Pottery Class","ru":"Гончарный класс мистера Джонсона"},{"en":"Green Eggs and BLAM","ru":"Зелёные яйца и БАХ"},{"en":"The Doodling School","ru":"Школа каракуль"},{"en":"The Koi Gee Biv Crew","ru":"Команда карпов"},{"en":null,"ru":null},{"en":null,"ru":null},{"en":null,"ru":null},{"en":null,"ru":null}],"single":[0,3,5,8,10,13,15,19,20,23,27,31,33,37,41,45,48,50,53,56,58,60,63,66,70,73],"odds":[1.0,0.2,0.1,0.05,0.02,0.01,0.004,0.001,0.0005,0.0003],"arenaWaves":[2,5,8,12,15,20,25,35,50,65,80,100,125,150,175,200],"kitchenCoins":[0,8200000.0,75000000.0,400000000.0,8000000000.0,50000000000.0,2130000000000.0,60000000000000.0,2000000000000000.0,1e+17],"jewels":[{"en":"Amethyst Rhinestone","ru":"Аметистовый страз","meal":1,"mq":2000,"spice":0,"sq":200,"d":"Boosts Meal Cooking speed","dru":"Ускоряет готовку блюд","item":"Quest66","iq":5},{"en":"Purple Navette","ru":"Фиолетовая навета","meal":3,"mq":2000,"spice":1,"sq":200,"d":"Bolsters 'Animal Farm'","dru":"Усиливает «Скотный двор»","item":"Quest35","iq":5},{"en":"Purple Rhombol","ru":"Фиолетовый ромбол","meal":5,"mq":2000,"spice":2,"sq":200,"d":"Boosts Lab EXP gain","dru":"Повышает опыт лаборатории","item":"Timecandy1","iq":10},{"en":"Sapphire Rhinestone","ru":"Сапфировый страз","meal":7,"mq":5000,"spice":3,"sq":400,"d":"Trims up a construction slot","dru":"Подрезает слот стройки","item":"Quest15","iq":10},{"en":"Sapphire Navette","ru":"Сапфировая навета","meal":9,"mq":5000,"spice":4,"sq":400,"d":"Boosts all stats","dru":"Повышает все характеристики","item":"TreeInterior1b","iq":25},{"en":"Sapphire Rhombol","ru":"Сапфировый ромбол","meal":11,"mq":5000,"spice":5,"sq":400,"d":"Emits a 'Line Width' Aura","dru":"Излучает ауру «ширины линии»","item":"Sewers1b","iq":30},{"en":"Sapphire Pyramite","ru":"Сапфировый пирамит","meal":13,"mq":5000,"spice":6,"sq":400,"d":"Automatically levels up kitchens","dru":"Сам прокачивает кухни","item":"Quest38","iq":2},{"en":"Pyrite Rhinestone","ru":"Пиритовый страз","meal":15,"mq":10000,"spice":7,"sq":1500,"d":"Bolsters 'No Bubble Left Behind'","dru":"Усиливает «Ни одного пузыря позади»","item":"DesertA1b","iq":50},{"en":"Pyrite Navette","ru":"Пиритовая навета","meal":17,"mq":10000,"spice":8,"sq":1500,"d":"Boosts 'non-consume' chance","dru":"Повышает шанс «не съесть»","item":"EquipmentPants19","iq":2},{"en":"Pyrite Rhombol","ru":"Пиритовый ромбол","meal":19,"mq":10000,"spice":9,"sq":1500,"d":"Boosts mainframe connection range","dru":"Увеличивает дальность связи мейнфрейма","item":"DesertA3b","iq":50},{"en":"Pyrite Pyramite","ru":"Пиритовый пирамит","meal":21,"mq":10000,"spice":10,"sq":1500,"d":"Boosts player damage","dru":"Повышает урон персонажей","item":"DesertC2b","iq":50},{"en":"Emerald Rhinestone","ru":"Изумрудный страз","meal":23,"mq":25000,"spice":11,"sq":5000,"d":"Reduces egg incubation time","dru":"Сокращает инкубацию яиц","item":"BabaYagaETC","iq":1},{"en":"Emerald Navette","ru":"Изумрудная навета","meal":25,"mq":25000,"spice":12,"sq":5000,"d":"Boosts player efficiency","dru":"Повышает эффективность персонажей","item":"SnowA2a","iq":80},{"en":"Emerald Rhombol","ru":"Изумрудный ромбол","meal":27,"mq":25000,"spice":13,"sq":5000,"d":"Bolsters 'Fungi Finger Pocketer'","dru":"Усиливает «Грибного карманника»","item":"SnowB2a","iq":120},{"en":"Emerald Pyramite","ru":"Изумрудный пирамит","meal":29,"mq":25000,"spice":14,"sq":5000,"d":"Boosts Meal Cooking speed","dru":"Ускоряет готовку блюд","item":"SnowC4a","iq":150},{"en":"Emerald Ulthurite","ru":"Изумрудный ультурит","meal":31,"mq":25000,"spice":15,"sq":5000,"d":"Boosts Shiny Mob level up rate","dru":"Ускоряет рост блестящих питомцев","item":"GalaxyA2b","iq":200},{"en":"Black Diamond Rhinestone","ru":"Страз из чёрного алмаза","meal":33,"mq":100000,"spice":15,"sq":10000,"d":"Bolsters meals","dru":"Усиливает блюда","item":"GalaxyC1b","iq":300},{"en":"Black Diamond Ulthurite","ru":"Ультурит из чёрного алмаза","meal":35,"mq":100000,"spice":16,"sq":10000,"d":"Bolsters 'Unadulterated Banking Fury'","dru":"Усиливает «Чистую банковскую ярость»","item":"Critter10A","iq":10000},{"en":"Pure Opal Rhinestone","ru":"Страз из чистого опала","meal":53,"mq":1000000,"spice":20,"sq":10000,"d":"Bolsters 'Slab Sovereignty'","dru":"Усиливает «Суверенитет плиты»","item":"SpiA1","iq":3000000},{"en":"Pure Opal Navette","ru":"Навета из чистого опала","meal":58,"mq":10000000,"spice":21,"sq":10000,"d":"Boosts entire Lab","dru":"Усиливает всю лабораторию","item":"SpiB2b","iq":1000},{"en":"Pure Opal Rhombol","ru":"Ромбол из чистого опала","meal":62,"mq":100000000,"spice":22,"sq":10000,"d":"Bolsters 'Depot Studies PhD'","dru":"Усиливает «Доктора складских наук»","item":"Critter11A","iq":5000},{"en":"Deadly Wrath Jewel","ru":"Самоцвет смертельного гнева","meal":58,"mq":10000000,"spice":21,"sq":10000,"d":"Boosts entire Lab","dru":"Усиливает всю лабораторию","item":"SpiB2b","iq":1000},{"en":"North Winds Jewel","ru":"Самоцвет северных ветров","meal":58,"mq":10000000,"spice":21,"sq":10000,"d":"Boosts entire Lab","dru":"Усиливает всю лабораторию","item":"SpiB2b","iq":1000},{"en":"Eternal Energy Jewel","ru":"Самоцвет вечной энергии","meal":58,"mq":10000000,"spice":21,"sq":10000,"d":"Boosts entire Lab","dru":"Усиливает всю лабораторию","item":"SpiB2b","iq":1000}],"chips":[{"en":"Grounded Nanochip","ru":"Заземлённый наночип","meal":0,"mq":100,"spice":0,"sq":100,"d":"Boosts total defence","dru":"Повышает общую защиту","item":"Copper","iq":20000},{"en":"Grounded Motherboard","ru":"Заземлённая материнская плата","meal":1,"mq":100,"spice":0,"sq":100,"d":"Boosts total movement speed","dru":"Повышает общую скорость бега","item":"OakTree","iq":30000},{"en":"Grounded Software","ru":"Заземлённый софт","meal":3,"mq":100,"spice":1,"sq":100,"d":"Boosts total accuracy","dru":"Повышает общую меткость","item":"Fish1","iq":20000},{"en":"Grounded Processor","ru":"Заземлённый процессор","meal":4,"mq":100,"spice":1,"sq":100,"d":"Boosts total drop rate","dru":"Повышает общий шанс дропа","item":"DesertA1","iq":10000},{"en":"Potato Chip","ru":"Картофельный чипс","meal":6,"mq":100,"spice":2,"sq":100,"d":"Boosts attack speed","dru":"Повышает скорость атаки","item":"Bug1","iq":20000},{"en":"Conductive Nanochip","ru":"Проводящий наночип","meal":9,"mq":100,"spice":3,"sq":100,"d":"Boosts lab exp gain","dru":"Повышает опыт лаборатории","item":"StumpTree","iq":100000},{"en":"Conductive Motherboard","ru":"Проводящая материнская плата","meal":12,"mq":100,"spice":4,"sq":100,"d":"Boosts mainframe line width","dru":"Повышает ширину линии мейнфрейма","item":"Gold","iq":100000},{"en":"Conductive Software","ru":"Проводящий софт","meal":15,"mq":100,"spice":4,"sq":100,"d":"Boosts Fighting AFK gain rate","dru":"Повышает AFK-доход в бою","item":"Critter2","iq":10000},{"en":"Conductive Processor","ru":"Проводящий процессор","meal":18,"mq":100,"spice":5,"sq":100,"d":"Boosts Skilling AFK gain Rate","dru":"Повышает AFK-доход навыков","item":"Bug5","iq":100000},{"en":"Chocolatey Chip","ru":"Шоколадный чип","meal":21,"mq":100,"spice":6,"sq":100,"d":"Chance for Crystal Mob revival","dru":"Шанс возрождения кристальных монстров","item":"CraftMat8","iq":200000},{"en":"Galvanic Nanochip","ru":"Гальванический наночип","meal":24,"mq":100,"spice":7,"sq":100,"d":"Boosts Mob respawn rate","dru":"Ускоряет возрождение монстров","item":"SnowC1","iq":100000},{"en":"Galvanic Motherboard","ru":"Гальваническая материнская плата","meal":27,"mq":100,"spice":8,"sq":100,"d":"Boosts skilling efficiency","dru":"Повышает эффективность навыков","item":"Fish5","iq":250000},{"en":"Galvanic Software","ru":"Гальванический софт","meal":29,"mq":100,"spice":9,"sq":100,"d":"Boosts total damage","dru":"Повышает общий урон","item":"Dementia","iq":300000},{"en":"Galvanic Processor","ru":"Гальванический процессор","meal":31,"mq":100,"spice":10,"sq":100,"d":"Boosts base skilling efficiency","dru":"Повышает базовую эффективность навыков","item":"GalaxyB2","iq":100000},{"en":"Wood Chip","ru":"Деревянная щепка","meal":33,"mq":100,"spice":11,"sq":100,"d":"Boosts multikill","dru":"Повышает мультиубийство","item":"Tree8","iq":250000},{"en":"Silkrode Nanochip","ru":"Шёлковый наночип","meal":35,"mq":100,"spice":12,"sq":100,"d":"Bolsters active star signs","dru":"Усиливает активные знаки зодиака","item":"CraftMat10","iq":2000000},{"en":"Silkrode Motherboard","ru":"Шёлковая материнская плата","meal":37,"mq":100,"spice":13,"sq":100,"d":"Bolsters equipped trophy","dru":"Усиливает надетый трофей","item":"Soul5","iq":2000000},{"en":"Silkrode Software","ru":"Шёлковый софт","meal":39,"mq":100,"spice":13,"sq":100,"d":"Bolsters equipped keychain","dru":"Усиливает надетый брелок","item":"Bug8","iq":2000000},{"en":"Silkrode Processor","ru":"Шёлковый процессор","meal":41,"mq":100,"spice":14,"sq":100,"d":"Bolsters equipped pendant","dru":"Усиливает надетый кулон","item":"Critter10","iq":2000000},{"en":"Poker Chip","ru":"Покерная фишка","meal":43,"mq":100,"spice":14,"sq":100,"d":"Bolsters equipped Weapon","dru":"Усиливает надетое оружие","item":"CraftMat14","iq":2000000},{"en":"Omega Nanochip","ru":"Омега-наночип","meal":45,"mq":100,"spice":15,"sq":100,"d":"Bolsters an equipped card","dru":"Усиливает надетую карту","item":"Bug8","iq":10000000},{"en":"Omega Motherboard","ru":"Омега-материнская плата","meal":47,"mq":100,"spice":16,"sq":100,"d":"Bolsters an equipped card","dru":"Усиливает надетую карту","item":"Fish8","iq":10000000}],"triagulon":15,"causticolumn":10,"ui":{"New_Recipe_Chance:_Utmost_Certainty":"Шанс нового рецепта: Абсолютная уверенность","New_Recipe_Chance:_Almost_Certain":"Шанс нового рецепта: Почти наверняка","New_Recipe_Chance:_Very_Likely":"Шанс нового рецепта: Очень вероятно","New_Recipe_Chance:_Likely":"Шанс нового рецепта: Вероятно","New_Recipe_Chance:_Unlikely":"Шанс нового рецепта: Маловероятно","New_Recipe_Chance:_Very_Unlikely":"Шанс нового рецепта: Очень маловероятно","New_Recipe_Chance:_Nearly_Impossible":"Шанс нового рецепта: Почти невозможно","New_Recipe_Chance:_Currently_Impossible":"Шанс нового рецепта: Пока невозможно"}};
+const T = {
+  en: {
+    title:"IdleOn Cooking Planner", subtitle:"meals, kitchens, new recipes",
+    nick_btn:"Load by username", nick_ph:"IdleOn username",
+    nick_hint:'Uses the profile you published on <a href="https://www.idleonefficiency.com" target="_blank" rel="noopener">idleonefficiency.com</a>; publish it again there to refresh the data.',
+    or:"or paste raw save JSON", placeholder:"Raw game JSON (IdleOn Efficiency → Raw data, or IdleOn Toolbox raw JSON)",
+    parse:"Load save", open:"Open file…", forget:"Forget save", show_locked:"Show locked things",
+    nick_loading:a=>`Loading ${a}…`, ok_nick:a=>`Loaded ${a.name}${a.when ? `, profile published ${a.when}` : ""}. Newer progress needs a new publish on IdleOn Efficiency, or paste raw JSON.`, ok_n:()=>`Save loaded.`, ok_saved:()=>`Last save restored.`,
+    e_nick:a=>`No published profile "${a.name}" (HTTP ${a.status}).`, e_nickfail:a=>`Could not load "${a.name}": ${a.err}`,
+    e_fail:"Could not read the save: ", e_nokey:"no Cooking / Meals keys, is this a raw game save?",
+    forgot:"Save removed. Showing reference data only.", nosave:"No save loaded: every meal, kitchen and spice is shown as a reference, nothing counts as owned.",
+    s_kit:"kitchens", s_meals:"meals found", s_lv:"total meal levels", s_spices:"spices", s_speed:"cooking points/hr, all kitchens", s_ladle:"ladles",
+    settings:"Account multipliers",
+    s_spd:"Other cooking speed multiplier ×", s_calib:"or take it from the game: kitchen", s_apply:"Use",
+    s_spd_note:"The page computes the kitchen part of the speed (base 10, Speed level, Richelin, Egg/Corndog/Soda/Cherry/Mello, Cabbage, Triagulon). About 25 other multipliers (Diamond Chef bubble, vials, stamps, atoms, cards, star signs, voting…) are folded into this number. Open a kitchen in the game, type the speed it shows (per hour) and press “Use”.",
+    s_fire:"Other fire (new recipe) multiplier ×", s_calib_f:"or from the game: kitchen",
+    s_fire_note:"Same idea for the fire speed shown on a kitchen that searches for a recipe.",
+    s_max:"Meal max level", s_bm:"Meal bonus multiplier ×", s_rk:"Kitchens searching recipes also cook",
+    set_note:a=>`Max level: 30 base${a.art ? ` + ${a.art} from Causticolumn` : ""}; Jade Emporium, Grimoire, Menagerie and Spelunk lore add more, set it by hand. Bonus multiplier: ${a.bd ? "Black Diamond Rhinestone is bought, ×1.16 if it is active in the Mainframe" : "Black Diamond Rhinestone not bought"}; shiny pets and Summoning add more.`,
+    kitchens:"Kitchens and spices", k:"Kitchen", k_locked:"locked", k_cost:c=>`costs ${c} coins`, k_idle:"idle", k_cook:"cooking", k_rec:"new recipe",
+    up_speed:"Speed", up_fire:"Fire", up_luck:"Luck", rate_meal:"cooking", rate_fire:"fire", rate_luck:"luck", rich:"Richelin",
+    fire_lv:(l)=>`fire Lv ${l}`, next_fire:t=>`next level in ${t}`,
+    plan:"What to level next", goal:"Goal", steps:"Steps", mix_speed:"Also buy speed meals when they pay off",
+    g_speed:"Cooking speed (all speed meals)", plan_none:"Nothing to level: no found meals below the max level.",
+    plan_note:(a)=>`Greedy plan: each step takes the upgrade with the best gain per hour of cooking, assuming every kitchen cooks that meal (Cook All, ${a.n} kitchens, ${a.s} cooking speed in total). Meals you already own are spent first. Total: ${a.t}.`,
+    plan_note_spd:"Speed goal: the gain is the growth of the total cooking speed (spending Turkeys lowers Triagulon).",
+    st_have:"enough now", st_cook:t=>`cook ${t}`, st_spd:"speed meal",
+    meals:"Meals", filter:"Show", f_all:"All found meals", f_speed:"Speed meals",
+    th_meal:"Meal", th_lv:"Level", th_have:"Have", th_cost:"Next level", th_time:"Cook time", th_bonus:"Bonus now", th_per:"+ per level", th_keep:"Keep", th_free:"Free to spend", th_mast:"Mastery",
+    meals_note:"Cook time is how long all kitchens need for the missing meals of the next level (Cook All). “Keep” is the next level cost plus Lab jewels that still need this meal; the rest is free to spend. The level cost follows the game: (10 + L + L²) × (1.2 + 0.05L)^L.",
+    disc:"New recipes", disc_k:"Kitchen", disc_all:"best kitchen", disc_targets:"Undiscovered meals: best spices", disc_any:"Best spice combos for any new meal",
+    th_combo:"Spices", th_poss:"Possible recipes", th_fire:"Wait for fire", th_chance:"Chance", th_try:"One try", th_exp:"Expected time", th_kit:"Kitchen", th_need:"Missing spices",
+    disc_note:"From the game code: the spices are not spent. Every spice adds its own meal; their sum adds up to 3 neighbouring meals. The last recipe sets the fire needed; each fire level costs 3× more and multiplies the chance of every new meal by 1.5 (and by the kitchen luck). The roll checks recipes from the last to the first and stops at the first hit; hitting a known meal gives nothing and the fire resets. Expected time = time of one try / chance. Waiting for a higher fire level is never faster: a level costs 3× more fire but raises the chance at most 1.5×, so claim at fire Lv 1 and start again.",
+    disc_now:"Searching now", disc_none:"No kitchen is searching for a recipe.", disc_done:"Every meal is found.", disc_more:n=>`${n} more need spices you don't have; tick “Show locked things”.`,
+    claim_now:p=>`claim now: ${p} for a new meal`, best_at:t=>`expected time to a new meal when you always claim at fire Lv 1: ${t}`, need_fire:(t,p)=>`fire Lv 1 in ${t}, then ${p}`, zero_new:"0 possible new recipes: change the spices",
+    advice:"Spending and stockpiling", jewels:"Lab jewels that cost meals", chips:"Lab chips (each costs 100 meals and 100 spice)",
+    th_item:"Item", th_meals:"Meals", th_spice:"Spice", th_status:"Status", th_chip_have:"Owned",
+    st_bought:"bought", st_ready:"ready", st_miss:n=>`missing ${n}`,
+    tip_turkey:a=>`Turkey: Triagulon (tier ${a.tier}) gives +${a.b}% cooking speed for ${a.q} Turkeys (15% × tier per power of 10). Spending the next level cost (${a.c}) would drop it to +${a.b2}%.`,
+    tip_turkey0:"Turkey: once you find the Triagulon artifact in Sailing it gives +15% cooking speed per power of 10 Turkeys you own, so keep a Turkey stockpile.",
+    tip_ach224:"Achievement: have 5 kitchens cooking Cabbage at once (+10% cooking speed).",
+    tip_ach225:"Achievement: have 8 kitchens cooking Pretzel at once (+20% cooking speed).",
+    tip_ach_ok:"Both kitchen achievements are done (+30% cooking speed).",
+    tip_11:"Level found meals to 11 first: the plate turns diamond and the Diamond Chef bubble starts counting it; after 11 the cost jumps.",
+    tip_free:a=>`Free meals right now: ${a} — spend them on the plan above; keep the rest for jewels and the next levels.`,
+    tip_idle:n=>`${n} kitchen(s) are idle. Let them cook (Cook All) or search for a recipe.`,
+    tip_zero:"A recipe search with 0 possible new recipes is wasted: pick spices from the table below.",
+    tip_ladle:n=>`You have ${n} ladles: each is 1 hour of cooking for the kitchen you use it on (guides). Use them on the meal at the top of the plan.`,
+    tip_speedfirst:"Spend spices on Speed upgrades first: more speed means more meals for everything else. Fire only matters while you still have recipes to find; Luck raises the new-recipe chance.",
+    na:"—", h:"h", d:"d", m:"m", y:"y", instant:"now",
+    foot:'Meals, bonuses, costs, recipe lists, odds, jewels, chips and every icon are read from the Steam game files (build __BUILD__); the formulas follow the game code (see COOKING.md in the repository). The save never leaves your browser; loading by username only downloads the published profile from idleonefficiency.com. Legends of Idleon and its art belong to Lavaflame2; this is an unofficial fan tool. <a href="https://github.com/StimDesu/idleon-cooking-planner" target="_blank" rel="noopener">Source on GitHub</a>.'
+  },
+  ru: {
+    title:"IdleOn Cooking Planner", subtitle:"блюда, кухни, новые рецепты",
+    nick_btn:"Загрузить по нику", nick_ph:"Ник в IdleOn",
+    nick_hint:'Берётся профиль, опубликованный на <a href="https://www.idleonefficiency.com" target="_blank" rel="noopener">idleonefficiency.com</a>. Чтобы обновить данные, опубликуйте профиль там заново.',
+    or:"или вставьте raw JSON сохранения", placeholder:"Raw JSON игры (IdleOn Efficiency → Raw data или raw JSON из IdleOn Toolbox)",
+    parse:"Загрузить", open:"Открыть файл…", forget:"Забыть сохранение", show_locked:"Показывать закрытое",
+    nick_loading:a=>`Загружаю ${a}…`, ok_nick:a=>`Загружен ${a.name}${a.when ? `, профиль опубликован ${a.when}` : ""}. Более свежий прогресс — только после новой публикации на IdleOn Efficiency или через raw JSON.`, ok_n:()=>`Сохранение загружено.`, ok_saved:()=>`Восстановлено прошлое сохранение.`,
+    e_nick:a=>`Опубликованный профиль «${a.name}» не найден (HTTP ${a.status}).`, e_nickfail:a=>`Не удалось загрузить «${a.name}»: ${a.err}`,
+    e_fail:"Не получилось прочитать сохранение: ", e_nokey:"нет ключей Cooking / Meals. Это точно raw-сохранение игры?",
+    forgot:"Сохранение удалено. Показаны только справочные данные.", nosave:"Сохранение не загружено: все блюда, кухни и специи показаны как справка, в наличии ничего нет.",
+    s_kit:"кухонь", s_meals:"блюд найдено", s_lv:"уровней блюд всего", s_spices:"специй", s_speed:"очков готовки/ч на всех кухнях", s_ladle:"половников",
+    settings:"Множители аккаунта",
+    s_spd:"Прочие множители скорости готовки ×", s_calib:"или взять из игры: кухня", s_apply:"Применить",
+    s_spd_note:"Страница считает «кухонную» часть скорости: база 10, уровень Speed, Ришлен, Egg/Corndog/Soda/Cherry/Mello, Cabbage, Triagulon. Ещё ~25 множителей (пузырь Diamond Chef, флаконы, марки, атомы, карты, знаки зодиака, голосование…) сидят в этом числе. Откройте кухню в игре, введите показанную скорость (в час) и нажмите «Применить».",
+    s_fire:"Прочие множители огня (поиск рецептов) ×", s_calib_f:"или из игры: кухня",
+    s_fire_note:"То же для скорости огня на кухне, которая ищет рецепт.",
+    s_max:"Макс. уровень блюд", s_bm:"Множитель бонусов блюд ×", s_rk:"Кухни, ищущие рецепт, тоже готовят",
+    set_note:a=>`Макс. уровень: 30 базово${a.art ? ` + ${a.art} от Causticolumn` : ""}; Jade Emporium, Гримуар, Менажерея и знания Spelunk добавляют ещё — укажите вручную. Множитель бонусов: ${a.bd ? "Black Diamond Rhinestone куплен, ×1.16 если он активен в мейнфрейме" : "Black Diamond Rhinestone не куплен"}; шайни-питомцы и Summoning добавляют ещё.`,
+    kitchens:"Кухни и специи", k:"Кухня", k_locked:"закрыта", k_cost:c=>`стоит ${c} монет`, k_idle:"простаивает", k_cook:"готовит", k_rec:"новый рецепт",
+    up_speed:"Speed", up_fire:"Fire", up_luck:"Luck", rate_meal:"готовка", rate_fire:"огонь", rate_luck:"удача", rich:"Ришлен",
+    fire_lv:(l)=>`огонь ${l} ур.`, next_fire:t=>`след. уровень через ${t}`,
+    plan:"Что качать дальше", goal:"Цель", steps:"Шагов", mix_speed:"Брать и скоростные блюда, когда окупаются",
+    g_speed:"Скорость готовки (все скоростные блюда)", plan_none:"Качать нечего: нет найденных блюд ниже макс. уровня.",
+    plan_note:(a)=>`Жадный план: на каждом шаге берётся улучшение с наибольшей пользой за час готовки, если все кухни готовят это блюдо (Cook All, кухонь: ${a.n}, суммарная скорость ${a.s}). Сначала тратятся блюда, которые уже есть. Всего: ${a.t}.`,
+    plan_note_spd:"Цель — скорость: польза = рост суммарной скорости готовки (трата Turkey снижает Triagulon).",
+    st_have:"хватает уже", st_cook:t=>`готовить ${t}`, st_spd:"скоростное блюдо",
+    meals:"Блюда", filter:"Показать", f_all:"Все найденные блюда", f_speed:"Скоростные блюда",
+    th_meal:"Блюдо", th_lv:"Уровень", th_have:"Есть", th_cost:"След. уровень", th_time:"Готовить", th_bonus:"Бонус сейчас", th_per:"+ за уровень", th_keep:"Держать", th_free:"Можно тратить", th_mast:"Мастерство",
+    meals_note:"«Готовить» — сколько времени всем кухням варить недостающие блюда до след. уровня (Cook All). «Держать» — цена след. уровня плюс самоцветы лаборатории, которым ещё нужно это блюдо; остальное можно тратить. Цена уровня как в игре: (10 + L + L²) × (1.2 + 0.05L)^L.",
+    disc:"Новые рецепты", disc_k:"Кухня", disc_all:"лучшая кухня", disc_targets:"Неоткрытые блюда: лучшие специи", disc_any:"Лучшие комбинации для любого нового блюда",
+    th_combo:"Специи", th_poss:"Возможные рецепты", th_fire:"Ждать огонь", th_chance:"Шанс", th_try:"Одна попытка", th_exp:"Ожидаемое время", th_kit:"Кухня", th_need:"Нет специй",
+    disc_note:"По коду игры: специи не тратятся. Каждая специя добавляет своё блюдо, а их сумма — до 3 соседних блюд. Последний рецепт в списке задаёт нужный огонь; каждый уровень огня втрое дороже и умножает шанс каждого нового блюда на 1.5 (и на удачу кухни). Бросок проверяет рецепты с последнего к первому и останавливается на первом попадании; попадание в известное блюдо ничего не даёт, огонь сбрасывается. Ожидаемое время = время попытки / шанс. Ждать огонь выше 1 уровня никогда не быстрее: уровень стоит в 3 раза больше огня, а шанс поднимает максимум в 1.5 раза — забирайте на 1 уровне и запускайте заново.",
+    disc_now:"Ищут сейчас", disc_none:"Ни одна кухня не ищет рецепт.", disc_done:"Все блюда найдены.", disc_more:n=>`Ещё ${n} требуют специй, которых нет; отметьте «Показывать закрытое».`,
+    claim_now:p=>`забирайте сейчас: ${p} на новое блюдо`, best_at:t=>`ожидание нового блюда, если всегда забирать на 1 ур. огня: ${t}`, need_fire:(t,p)=>`1 ур. огня через ${t}, затем ${p}`, zero_new:"0 возможных новых рецептов: смените специи",
+    advice:"Куда тратить и сколько копить", jewels:"Самоцветы лаборатории за блюда", chips:"Чипы лаборатории (каждый — 100 блюд и 100 специй)",
+    th_item:"Предмет", th_meals:"Блюда", th_spice:"Специя", th_status:"Статус", th_chip_have:"Есть",
+    st_bought:"куплен", st_ready:"хватает", st_miss:n=>`не хватает ${n}`,
+    tip_turkey:a=>`Turkey: Triagulon (тир ${a.tier}) даёт +${a.b}% к скорости готовки за ${a.q} Turkey (15% × тир за каждый порядок). Если потратить цену след. уровня (${a.c}), останется +${a.b2}%.`,
+    tip_turkey0:"Turkey: когда найдёте артефакт Triagulon в мореплавании, он даст +15% к скорости готовки за каждый порядок (×10) Turkey на складе — копите их.",
+    tip_ach224:"Достижение: 5 кухон одновременно готовят Cabbage (+10% к скорости готовки).",
+    tip_ach225:"Достижение: 8 кухонь одновременно готовят Pretzel (+20% к скорости готовки).",
+    tip_ach_ok:"Оба кухонных достижения получены (+30% к скорости готовки).",
+    tip_11:"Сначала поднимайте найденные блюда до 11 уровня: тарелка становится алмазной и её учитывает пузырь Diamond Chef; после 11 цена резко растёт.",
+    tip_free:a=>`Свободные блюда сейчас: ${a} — тратьте их по плану выше; остальное держите под самоцветы и следующие уровни.`,
+    tip_idle:n=>`Кухонь без дела: ${n}. Пусть готовят (Cook All) или ищут рецепт.`,
+    tip_zero:"Поиск рецепта с 0 возможных новых рецептов — пустая трата: берите специи из таблицы ниже.",
+    tip_ladle:n=>`У вас ${n} половников: каждый — 1 час готовки на кухне, где его используют (по гайдам). Тратьте их на блюдо сверху плана.`,
+    tip_speedfirst:"Специи сначала в улучшения Speed: больше скорость — больше блюд на всё остальное. Fire нужен, пока остались ненайденные рецепты; Luck повышает шанс нового рецепта.",
+    na:"—", h:"ч", d:"д", m:"м", y:"г", instant:"сразу",
+    foot:'Блюда, бонусы, цены, списки рецептов, шансы, самоцветы, чипы и все иконки взяты из файлов Steam-версии игры (билд __BUILD__); формулы повторяют код игры (см. COOKING.md в репозитории). Сохранение не покидает браузер; загрузка по нику только скачивает опубликованный профиль с idleonefficiency.com. Legends of Idleon и её графика принадлежат Lavaflame2; это неофициальный фанатский инструмент. <a href="https://github.com/StimDesu/idleon-cooking-planner" target="_blank" rel="noopener">Исходники на GitHub</a>.'
+  }
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const asArr = v => { if (typeof v !== "string") return v; try { return JSON.parse(v); } catch (e) { return v; } };
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }, del(k){ try { localStorage.removeItem(k); } catch(e){} } };
+let lang = store.get("ck-lang") || ((navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"]).some(l => /^ru\b/i.test(l)) ? "ru" : "en");
+let L = T[lang];
+const NM = D.meals.length, NK = 10;
+const SPEED_CATS = ["Mcook", "KitchenEff", "zMealFarm"];
+
+// ---------- formatting ----------
+const loc = () => lang === "ru" ? "ru-RU" : "en-US";
+function big(n){
+  if (!isFinite(n)) return "∞";
+  const a = Math.abs(n);
+  if (a < 100) return (Math.round(n * 100) / 100).toLocaleString(loc());
+  if (a < 1e4) return Math.round(n).toLocaleString(loc());
+  if (a < 1e15) return new Intl.NumberFormat(loc(), { notation:"compact", maximumFractionDigits:2 }).format(n);
+  return n.toExponential(2).replace("e+", "e");
+}
+const int = n => Math.round(n).toLocaleString(loc());
+const pct = p => p >= 0.9995 ? "100%" : p >= 0.1 ? (p * 100).toFixed(1) + "%" : p >= 0.001 ? (p * 100).toFixed(2) + "%" : (p * 100).toPrecision(2) + "%";
+function dur(h){
+  if (!isFinite(h)) return "∞";
+  if (h <= 1 / 3600) return L.instant;
+  if (h < 1) return Math.ceil(h * 60) + L.m;
+  if (h < 48) { const hh = Math.floor(h), mm = Math.round((h - hh) * 60); return hh + L.h + (mm ? " " + mm + L.m : ""); }
+  const d = h / 24;
+  if (d < 365) { const dd = Math.floor(d), hh = Math.round((d - dd) * 24); return dd + L.d + (hh ? " " + hh + L.h : ""); }
+  const y = d / 365;
+  return (y < 1e4 ? y.toFixed(1) : big(y)) + L.y;
+}
+const mName = i => { const m = D.meals[i]; return (lang === "ru" && m.ru) || m.en; };
+const sName = s => { const x = D.spices[s] || {}; const n = (lang === "ru" && x.ru) || x.en; return (lang === "ru" ? "Специя " : "Spice ") + (s + 1) + (n ? " · " + n : ""); };
+function mDesc(i, v){
+  const m = D.meals[i], d = (lang === "ru" && m.dru) || m.d;
+  return d.replace("{", v == null ? "" : big(v));
+}
+const catLabel = c => { const i = D.meals.findIndex(m => m.cat === c); return mDesc(i, null).replace(/^\+\s*%?\s*/, "").replace(/^%\s*/, ""); };
+
+// ---------- sprites (integer scale keeps pixel art sharp) ----------
+function spr(kind, i, k, cls){
+  const s = D.spr[kind];
+  return `<span class="sp ${kind} ${cls || ""}" style="--w:${s.w};--h:${s.h};--cols:${s.cols};--k:${k || 1};--x:${i % s.cols};--y:${Math.floor(i / s.cols)}"></span>`;
+}
+const mealIc = (i, k, cls) => `<span data-meal="${i}" style="display:inline-flex">${spr("meal", i, k || 1, cls)}</span>`;
+const spiceIc = (s, k, cls) => `<span data-spice="${s}" style="display:inline-flex">${spr("spice", s, k || 1, cls)}</span>`;
+
+// ---------- state ----------
+let acct = null, lastMsg = null;
+const num = (id, def) => { const v = parseFloat($("#" + id).value); return isFinite(v) && v > 0 ? v : def; };
+const showLocked = () => !acct || $("#showLocked").checked;
+
+// ---------- save ----------
+function addInv(map, order, qty){
+  if (!Array.isArray(order) || !Array.isArray(qty)) return;
+  order.forEach((id, i) => { const q = Number(qty[i]) || 0; if (id && q > 0) map[id] = (map[id] || 0) + q; });
+}
+function parseSave(text){
+  let o = JSON.parse(text.trim());
+  if (o && o.data && typeof o.data === "object" && !("Cooking" in o)) o = o.data;
+  if (!o || !("Cooking" in o && "Meals" in o)) throw new Error("nokey");
+  const A = k => o[k] == null ? null : asArr(o[k]);
+  const meals = (A("Meals") || []).map(asArr), cook = (A("Cooking") || []).map(asArr);
+  const arr = (a, n, d) => Array.from({ length: n }, (_, i) => Number(a && a[i]) || d);
+  const lv = arr(meals[0], NM, 0), qty = arr(meals[2], NM, 0);
+  const spice = Array.from({ length: 30 }, (_, i) => meals[3] && meals[3][i] != null ? Number(meals[3][i]) : -1);
+  const kit = Array.from({ length: NK }, (_, k) => { const r = cook[k] || []; return { st: Number(r[0]) || 0, meal: Number(r[1]), sp: [2,3,4,5].map(j => r[j] == null ? -1 : Number(r[j])), spd: Number(r[6]) || 0, fire: Number(r[7]) || 0, luck: Number(r[8]) || 0, acc: Number(r[10]) || 0 }; });
+  const rib = A("Ribbon") || [], cm = A("CookMaster") || [], cm0 = asArr(cm[0]) || [];
+  const lab = (A("Lab") || []).map(asArr), sail = (A("Sailing") || []).map(asArr), ola = A("OptLacc") || [], ach = A("AchieveReg") || [], dream = A("Dream") || [], gem = A("GemItemsPurchased") || [];
+  let farm = 0, cookLv = 0;
+  for (let n = 0; ("Lv0_" + n) in o; n++) { const l = A("Lv0_" + n) || []; farm = Math.max(farm, Number(l[16]) || 0); cookLv = Math.max(cookLv, Number(l[10]) || 0); }
+  const items = {}; addInv(items, A("ChestOrder"), A("ChestQuantity"));
+  for (let n = 0; ("InventoryOrder_" + n) in o; n++) addInv(items, A("InventoryOrder_" + n), A("ItemQTY_" + n));
+  const arena = D.arenaWaves.filter(w => (Number(ola[89]) || 0) >= w).length;   // CalcTalentMAP.arena
+  return {
+    lv, qty, spice, kit,
+    ribbon: Array.from({ length: NM }, (_, i) => Number(rib[28 + i]) || 0),
+    mastery: Array.from({ length: NM }, (_, i) => Number(cm0[i]) || 0),
+    rich: Number(gem[120]) || 0, jewel: (lab[14] || []).map(Number), chip: (lab[15] || []).map(Number),
+    art13: Number(sail[3] && sail[3][13]) || 0, art17: Number(sail[3] && sail[3][17]) || 0,
+    arena, ach: k => Number(ach[k]) === -1 ? 1 : 0, ola193: Number(ola[193]) || 0, dream11: Number(dream[11]) || 0,
+    farm, cookLv, ladles: items.Ladle || 0
+  };
+}
+
+// ---------- game formulas ----------
+const known = i => acct ? acct.lv[i] > 0 : false;
+const ownedKitchen = k => acct ? acct.kit[k].st > 0 : k === 0;
+const spiceOpen = s => acct ? acct.spice[s] >= 0 : true;
+const ribbonMul = t => 1 + Math.floor(5 * t + Math.floor(t / 2) * (4 + 6.5 * Math.floor(t / 5))) / 100;   // Summoning("RibbonBonus") without set/cloud/jelly extras
+function mealBonus(i, lv){
+  const m = D.meals[i];
+  if (m.cat === "PxLine") return m.base * lv;
+  const ms = acct ? acct.mastery[i] : 0;
+  return m.base * lv * (1 + ms / (ms + 5)) * ribbonMul(acct ? acct.ribbon[i] : 0) * num("bonusMul", 1);
+}
+function catSums(lv){ const s = {}; for (let i = 0; i < NM; i++) if (lv[i] > 0) s[D.meals[i].cat] = (s[D.meals[i].cat] || 0) + mealBonus(i, lv[i]); return s; }
+function costBase(lv){ return (10 + lv + lv * lv) * Math.pow(1.2 + .05 * lv, lv) * Math.pow(10, 22 * Math.floor((lv + 1000) / 1111)) * Math.pow(1 + .4 * Math.floor((lv + 1000) / 1111), lv); }
+const costDisc = () => acct ? 1 / Math.min(5, Math.max(1, 1 + 10 * acct.ach(233) / 100)) : 1;
+const costNext = (i, lv, first) => costBase(lv) * costDisc() * (first && acct ? Math.pow(.8, Math.min(acct.ola193, acct.dream11)) : 1);
+const maxLv = () => Math.round(num("maxLv", 30));
+const triag = turkeys => acct && acct.art13 > 0 ? D.triagulon * acct.art13 * Math.log10(Math.max(1, turkeys)) : 0;
+function kSpeedPart(k, lv, qty){   // CookingSPEED without the multipliers folded into "other"
+  const kt = acct ? acct.kit[k] : { spd:0, fire:0, luck:0 }, s = catSums(lv);
+  return 10 * (acct && acct.rich > k ? 3 : 1) * (1 + kt.spd / 10) * (1 + (s.Mcook || 0) / 100)
+    * (1 + (s.KitchenEff || 0) * Math.floor((kt.spd + kt.fire + kt.luck) / 10) / 100)
+    * (1 + (s.zMealFarm || 0) * Math.ceil(((acct ? acct.farm : 0) + 1) / 50) / 100)
+    * (1 + triag(qty ? qty[0] : acct ? acct.qty[0] : 0) / 100)
+    * (1 + (acct ? Math.min(20 * acct.ach(225) + 10 * acct.ach(224), 100) : 0) / 100);
+}
+const kSpeed = (k, lv, qty) => kSpeedPart(k, lv, qty) * num("spdMul", 1);
+function kFirePart(k){
+  const kt = acct ? acct.kit[k] : { spd:0, fire:0, luck:0 }, s = catSums(acct ? acct.lv : []);
+  return 5 * (acct && acct.rich > k ? 2 : 1) * (1 + kt.fire / 10) * (1 + (s.Rcook || 0) / 100) * (1 + (s.KitchenEff || 0) * Math.floor((kt.spd + kt.fire + kt.luck) / 10) / 100);
+}
+const kFire = k => kFirePart(k) * num("fireMul", 1);
+const kLuck = k => 1 + Math.pow(5 * (acct ? acct.kit[k].luck : 0), .85) / 100;
+function upgCost(k, type){    // CookingUpgSpiceCostQty
+  const lv = acct ? acct.kit[k][["spd","fire","luck"][type]] : 0, s = acct ? catSums(acct.lv) : {};
+  const div = (1 + (s.KitchC || 0) / 100) * (1 + (acct && acct.rich > k ? 40 : 0) / 100) * (1 + .5 * (acct && acct.arena > 7 ? 1 : 0));
+  return 1 + 1 / div * (lv + 1 + Math.floor(Math.max(0, lv - 10) / 2) + Math.pow(Math.max(0, lv - 30), 1.2)) * Math.pow(1.02, Math.max(0, lv - 60));
+}
+const cookKitchens = () => { const r = []; for (let k = 0; k < NK; k++) if (ownedKitchen(k) && (!acct || acct.kit[k].st !== 3 || $("#useRecipeKitchens").checked)) r.push(k); return r; };
+const totalSpeed = (lv, qty) => cookKitchens().reduce((a, k) => a + kSpeed(k, lv, qty), 0);
+
+// ---------- new recipes (CookingR "PossibleRecipes2", "CookingFireREQ", "CookingNewRecipeOdds") ----------
+const SINGLE = new Set(D.single);
+function possible(sp){
+  const out = [];
+  sp.forEach(s => { if (s >= 0 && !out.includes(D.single[s])) out.push(D.single[s]); });
+  let sum = 0, cnt = 0; sp.forEach(s => { if (s >= 0) { sum += s; cnt++; } });
+  sum = sum < 71 ? Math.min(55, sum) : sum < 87 ? Math.min(65, Math.round(sum - 14)) : Math.round(sum - 22);
+  if (sum > .5) {
+    const n = Math.min(cnt, 3);
+    for (let i = 0; i < n; i++) {
+      const m = Math.round(Math.min(73, Math.max(0, sum + (i - Math.floor((n - 1) / 2)))));
+      if (!out.includes(m) && !SINGLE.has(m) && m < 74) out.push(m);
+    }
+  }
+  return out.sort((a, b) => a - b);
+}
+const fireReq = list => { const last = list[list.length - 1]; return 2 * D.meals[Math.min(66, last)].req * Math.pow(25, Math.max(0, last - 66)); };
+const fireLvOf = (acc, req) => { let l = 0, t = req; while (l < 100 && acc >= t) { t *= 3; l++; } return l; };
+function roll(list, luck, lv, isKnown){
+  const res = { any: 0, per: {} };
+  let reach = 1;
+  for (let j = list.length - 1; j >= 0; j--) {
+    const m = list[j], kn = isKnown(m), o = Math.min(1, (D.odds[j] || 0) * (kn ? 1 : luck * Math.pow(1.5, lv)));
+    const hit = reach * o;
+    if (!kn) { res.any += hit; res.per[m] = hit; }
+    reach *= 1 - o;
+  }
+  return res;
+}
+function bestLevel(list, fire, luck, target){   // fire level with the lowest expected time per success
+  const req = fireReq(list); let best = null;
+  for (let lv = 1; lv <= 40; lv++) {
+    const r = roll(list, luck, lv, known), p = target == null ? r.any : (r.per[target] || 0);
+    if (p <= 0) return null;
+    const t = req * Math.pow(3, lv - 1) / fire, e = t / p;
+    if (!best || e < best.e) best = { lv, p, t, e }; else if (p >= .9999) break;
+  }
+  return best;
+}
+function* combos(spices){
+  const n = spices.length;
+  for (let a = 0; a < n; a++) { yield [spices[a]];
+    for (let b = a + 1; b < n; b++) { yield [spices[a], spices[b]];
+      for (let c = b + 1; c < n; c++) { yield [spices[a], spices[b], spices[c]];
+        for (let d = c + 1; d < n; d++) yield [spices[a], spices[b], spices[c], spices[d]]; } } }
+}
+let discCache = null, acctVer = 0;
+function discover(){
+  const key = [acctVer, $("#discK").value, num("fireMul", 1), num("bonusMul", 1), lang].join("|");
+  if (discCache && discCache.key === key) return discCache.v;
+  const v = discover2(); discCache = { key, v }; return v;
+}
+function discover2(){
+  const allSp = Array.from({ length: Math.min(28, D.single.length) }, (_, s) => s), own = allSp.filter(spiceOpen);   // spices without a RANDOlist[49] meal are not in the game yet
+  const sel = $("#discK").value, ks = sel === "" ? [...Array(NK).keys()].filter(ownedKitchen) : [+sel];
+  const kinfo = ks.map(k => ({ k, f: kFire(k), luck: kLuck(k) }));
+  const targets = {}, any = [];
+  // spices you don't own yet: only check combos that use them, on the strongest kitchen, to keep it fast
+  const top = kinfo.slice().sort((a, b) => b.f * b.luck - a.f * a.luck).slice(0, 1);
+  const run = (spList, tag) => {
+    for (const c of combos(spList)) {
+      if (tag === "all" && c.every(spiceOpen)) continue;
+      const list = possible(c), news = list.filter(m => !known(m));
+      if (!news.length) continue;
+      for (const ki of tag === "all" ? top : kinfo) {
+        if (tag === "own") { const b = bestLevel(list, ki.f, ki.luck, null); if (b) any.push({ c, list, k: ki.k, b }); }
+        for (const m of news) {
+          const cur = targets[m];
+          if (cur && cur.tag === "own" && tag === "all") continue;
+          const b = bestLevel(list, ki.f, ki.luck, m);
+          if (b && (!cur || (cur.tag === "all" && tag === "own") || b.e < cur.b.e)) targets[m] = { c, list, k: ki.k, b, tag };
+        }
+      }
+    }
+  };
+  run(own, "own");
+  if (acct && own.length < allSp.length) run(allSp, "all");
+  any.sort((a, b) => a.b.e - b.b.e);
+  const seen = new Set(), anyTop = [];
+  for (const x of any) { const key = x.c.join(","); if (seen.has(key)) continue; seen.add(key); anyTop.push(x); if (anyTop.length >= 8) break; }
+  return { targets, anyTop };
+}
+
+// ---------- planner ----------
+function goals(){
+  const cats = [];
+  D.meals.forEach((m, i) => { if ((showLocked() || known(i)) && !SPEED_CATS.includes(m.cat) && !cats.includes(m.cat)) cats.push(m.cat); });
+  return cats;
+}
+function plan(){
+  const goal = $("#goal").value || "speed", steps = Math.max(1, Math.min(200, +$("#steps").value || 15)), mx = maxLv(), mix = $("#mixSpeed").checked;
+  const lv = acct ? acct.lv.slice() : D.meals.map(() => 0), qty = acct ? acct.qty.slice() : D.meals.map(() => 0);
+  const avail = i => acct ? known(i) : true;
+  const out = []; let t = 0, first = true;
+  const speedC = (S) => { const c = []; for (let i = 0; i < NM; i++) if (avail(i) && SPEED_CATS.includes(D.meals[i].cat) && lv[i] < mx) {
+      const cost = costNext(i, lv[i], first), need = Math.max(0, cost - qty[i]), time = need * D.meals[i].req / S;
+      const lv2 = lv.slice(); lv2[i]++; const q2 = qty.slice(); q2[i] = Math.max(0, q2[i] - cost);
+      const g = totalSpeed(lv2, q2) / S; if (g > 1) c.push({ i, cost, need, time, g, v: Math.log(g) }); } return c; };
+  for (let s = 0; s < steps; s++) {
+    const S = totalSpeed(lv, qty); if (!(S > 0)) break;
+    let pick = null;
+    if (goal === "speed") {
+      for (const c of speedC(S)) { c.score = c.v / (c.time + 1e-9); if (!pick || c.score > pick.score) pick = c; }
+      if (pick) pick.spd = true;
+    } else {
+      for (let i = 0; i < NM; i++) if (avail(i) && D.meals[i].cat === goal && lv[i] < mx) {
+        const cost = costNext(i, lv[i], first), need = Math.max(0, cost - qty[i]), time = need * D.meals[i].req / S;
+        const v = mealBonus(i, lv[i] + 1) - mealBonus(i, lv[i]), score = v / (time + 1e-9);
+        if (!pick || score > pick.score) pick = { i, cost, need, time, v, score };
+      }
+      if (pick && mix) {   // a speed meal pays off if its cost is below the time it saves on the rest of the plan
+        const rest = pick.time * (steps - s);
+        let sp = null; for (const c of speedC(S)) if (c.time < rest * (1 - 1 / c.g) && (!sp || c.v / (c.time + 1e-9) > sp.v / (sp.time + 1e-9))) sp = c;
+        if (sp) { pick = sp; pick.spd = true; }
+      }
+    }
+    if (!pick) break;
+    const i = pick.i, before = goal === "speed" || pick.spd ? S : null;
+    qty[i] = Math.max(0, qty[i] + pick.need - pick.cost); lv[i]++; t += pick.time; first = false;
+    out.push({ i, lv: lv[i], cost: pick.cost, need: pick.need, time: pick.time, t, spd: !!pick.spd, g: pick.g, v: pick.v, S: before });
+  }
+  return out;
+}
+
+// ---------- rendering ----------
+function applyLang(){
+  L = T[lang];
+  document.documentElement.lang = lang;
+  document.title = L.title;
+  document.querySelectorAll("[data-i]").forEach(el => { const v = L[el.dataset.i]; if (el.dataset.i === "foot" || el.dataset.i === "nick_hint") el.innerHTML = v.replace("__BUILD__", D.build || "?"); else el.textContent = v; });
+  $("#save").placeholder = L.placeholder; $("#nick").placeholder = L.nick_ph;
+  document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  if (lastMsg) showMsg(...lastMsg);
+  renderAll();
+}
+function renderStats(){
+  if (!acct) { $("#stats").innerHTML = `<span class="note">${L.nosave}</span>`; return; }
+  const kits = acct.kit.filter(k => k.st > 0).length, found = acct.lv.filter(v => v > 0).length, lvs = acct.lv.reduce((a, b) => a + b, 0), sp = acct.spice.filter(v => v >= 0).length;
+  $("#stats").innerHTML = [[kits + "/" + NK, L.s_kit], [found + "/" + NM, L.s_meals], [int(lvs), L.s_lv], [sp, L.s_spices], [big(totalSpeed(acct.lv)), L.s_speed]]
+    .map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("")
+    + (acct.ladles ? `<div class="stat"><img class="ladle" src="img/ladle.png" alt="" width="72" height="72"><b>${big(acct.ladles)}</b><span>${L.s_ladle}</span></div>` : "");
+}
+function renderSettings(){
+  const opts = [...Array(NK).keys()].filter(ownedKitchen).map(k => `<option value="${k}">${L.k} ${k + 1}</option>`).join("");
+  for (const id of ["#calK", "#calKf"]) { const v = $(id).value; $(id).innerHTML = opts; if (v && $(id).querySelector(`option[value="${v}"]`)) $(id).value = v; }
+  $("#setNote").textContent = L.set_note({ art: acct && acct.art17 ? D.causticolumn * acct.art17 : 0, bd: acct && acct.jewel[16] === 1 });
+}
+function renderKitchens(){
+  const sl = showLocked();
+  $("#spices").innerHTML = D.spices.map((x, s) => {
+    if (s >= D.single.length) return "";
+    const open = spiceOpen(s); if (!open && !sl) return "";
+    return `<span class="spi${open ? "" : " locked"}" data-spice="${s}">${spr("spice", s, 1)}${acct && open ? big(Math.floor(acct.spice[s])) : ""}</span>`;
+  }).join("");
+  let h = "";
+  for (let k = 0; k < NK; k++) {
+    const own = ownedKitchen(k); if (!own && !sl) continue;
+    const kt = acct ? acct.kit[k] : { st: 1, meal: -1, sp: [-1,-1,-1,-1], spd: 0, fire: 0, luck: 0, acc: 0 };
+    const rich = acct && acct.rich > k;
+    let st;
+    if (!own) st = `${L.k_locked}${D.kitchenCoins[k] ? " · " + L.k_cost(big(D.kitchenCoins[k])) : ""}`;
+    else if (kt.st === 2 && kt.meal >= 0) st = `${mealIc(kt.meal, 1)} ${L.k_cook}: ${esc(mName(kt.meal))}`;
+    else if (kt.st === 3) {
+      const list = possible(kt.sp), req = list.length ? fireReq(list) : 0, flv = list.length ? fireLvOf(kt.acc, req) : 0;
+      st = `<span class="combo">${kt.sp.filter(s => s >= 0).map(s => spiceIc(s, 1)).join("")}</span>${spr("fire", Math.min(11, flv), 1)} ${L.fire_lv(flv)}`;
+      if (list.length) st += ` · ${L.next_fire(dur((req * Math.pow(3, flv) - kt.acc) / kFire(k)))}`;
+    } else st = L.k_idle;
+    const ups = own ? [0, 1, 2].map(t => {
+      const sp = 2 * k + t, c = upgCost(k, t), have = acct ? acct.spice[sp] : null, lvl = kt[["spd","fire","luck"][t]];
+      const cls = have == null ? "" : have < 0 ? "no" : have >= c ? "yes" : "no";
+      return `<span>${L[["up_speed","up_fire","up_luck"][t]]}</span><b>${lvl}</b>${spiceIc(sp < 30 ? sp : 30, 1, have != null && have < 0 ? "dim" : "")}<span class="c ${cls}">${big(Math.ceil(c))}${have != null && have >= 0 ? " / " + big(Math.floor(have)) : ""}</span>`;
+    }).join("") : "";
+    const rates = own ? `<div class="rates"><span>${L.rate_meal}</span>${big(kSpeed(k, acct ? acct.lv : D.meals.map(() => 0)))}/h <span>${L.rate_fire}</span>${big(kFire(k))}/h <span>${L.rate_luck}</span>×${kLuck(k).toFixed(2)}</div>` : "";
+    h += `<div class="kit${rich ? " rich" : ""}${own ? "" : " locked"}"><div class="hd"><b>${L.k} ${k + 1}</b>${rich ? `<span class="tag">${L.rich}</span>` : ""}</div><div class="st">${st}</div>${own ? `<div class="ups">${ups}</div>` : ""}${rates}</div>`;
+  }
+  $("#kits").innerHTML = h;
+}
+function renderGoal(){
+  const cur = $("#goal").value || store.get("ck-goal") || "speed";
+  $("#goal").innerHTML = `<option value="speed">${esc(L.g_speed)}</option>` + goals().map(c => `<option value="${c}">${esc(catLabel(c))}</option>`).join("");
+  $("#goal").value = $("#goal").querySelector(`option[value="${cur}"]`) ? cur : "speed";
+  const cv = $("#cat").value || "all";
+  const cats = []; D.meals.forEach((m, i) => { if ((showLocked() || known(i)) && !cats.includes(m.cat)) cats.push(m.cat); });
+  $("#cat").innerHTML = `<option value="all">${esc(L.f_all)}</option><option value="speed">${esc(L.f_speed)}</option>` + cats.map(c => `<option value="${c}">${esc(catLabel(c))}</option>`).join("");
+  $("#cat").value = $("#cat").querySelector(`option[value="${cv}"]`) ? cv : "all";
+}
+function renderPlan(){
+  const p = plan(), goal = $("#goal").value;
+  if (!p.length) { $("#planList").innerHTML = ""; $("#planNote").textContent = L.plan_none; return; }
+  const S = totalSpeed(acct ? acct.lv : D.meals.map(() => 0));
+  $("#planNote").textContent = L.plan_note({ n: cookKitchens().length, s: big(S) + "/h", t: dur(p[p.length - 1].t) }) + (goal === "speed" ? " " + L.plan_note_spd : "");
+  $("#planList").innerHTML = p.map(x => {
+    const eff = x.spd ? `×${x.g.toFixed(3)} ${L.rate_meal}` : `+${big(x.v)} → ${esc(mDesc(x.i, mealBonus(x.i, x.lv)))}`;
+    return `<li class="${x.spd ? "spd" : ""}">${mealIc(x.i, 1)}<div class="w"><b>${esc(mName(x.i))}</b> → ${x.lv}<small>${eff}</small></div>`
+      + `<div class="t">${x.need > 0 ? L.st_cook(dur(x.time)) : L.st_have}<small>${big(x.cost)} · Σ ${dur(x.t)}</small></div></li>`;
+  }).join("");
+}
+function reserves(){   // meals to keep: next level + unbought jewels
+  const r = {};
+  if (!acct) return r;
+  D.jewels.forEach((j, n) => { if (acct.jewel[n] !== 1) r[j.meal] = (r[j.meal] || 0) + j.mq; });
+  return r;
+}
+function renderMeals(){
+  const f = $("#cat").value || "all", sl = showLocked(), mx = maxLv(), S = totalSpeed(acct ? acct.lv : D.meals.map(() => 0)), res = reserves();
+  let h = `<thead><tr><th class="l">${L.th_meal}</th><th>${L.th_lv}</th><th>${L.th_have}</th><th>${L.th_cost}</th><th></th><th>${L.th_time}</th><th class="l">${L.th_bonus}</th><th>${L.th_per}</th><th>${L.th_keep}</th><th>${L.th_free}</th></tr></thead><tbody>`;
+  for (let i = 0; i < NM; i++) {
+    const m = D.meals[i], kn = !acct || known(i);
+    if (!kn && !sl) continue;
+    if (f === "speed" ? !SPEED_CATS.includes(m.cat) : f !== "all" && m.cat !== f) continue;
+    const lv = acct ? acct.lv[i] : 0, have = acct ? acct.qty[i] : 0, cost = lv < mx ? costNext(i, lv, true) : 0;
+    const pctv = cost ? Math.min(100, have / cost * 100) : 100, time = cost ? Math.max(0, cost - have) * m.req / S : 0;
+    const keep = (lv < mx ? cost : 0) + (res[i] || 0), free = Math.max(0, have - keep);
+    const rib = acct ? acct.ribbon[i] : 0;
+    h += `<tr class="${kn ? "" : "locked"}"><td class="l nm"><div class="nmw">${mealIc(i, 2)}<div>${esc(mName(i))}<small>${rib ? spr("ribbon", Math.min(27, rib - 1), 1) + " T" + rib + " ×" + ribbonMul(rib).toFixed(2) : ""}${acct && acct.mastery[i] ? ` · ${L.th_mast} ${acct.mastery[i]}` : ""}</small></div></div></td>`
+      + `<td class="num">${lv}/${mx}</td><td class="num">${big(have)}</td><td class="num">${cost ? big(cost) : L.na}</td>`
+      + `<td><div class="bar${pctv < 100 ? " part" : ""}"><i style="width:${pctv}%"></i></div></td><td class="num">${cost ? dur(time) : L.na}</td>`
+      + `<td class="l wrap">${esc(mDesc(i, mealBonus(i, lv)))}</td><td class="num">+${big(mealBonus(i, 1) - mealBonus(i, 0))}</td>`
+      + `<td class="num">${big(keep)}</td><td class="num">${free > 0 ? `<span class="chip ok">${big(free)}</span>` : L.na}</td></tr>`;
+  }
+  $("#mealTbl").innerHTML = h + "</tbody>";
+}
+function plates(list, target){
+  return `<span class="plates">${list.map((m, j) => `<span class="pm${known(m) ? " known" : ""}${m === target ? " tgt" : ""}">${mealIc(m, 1)}<i>${Math.round(D.odds[j] * 1000) / 10}%</i></span>`).join("")}</span>`;
+}
+const comboHTML = (c, dimMissing) => `<span class="combo">${c.map(s => spiceIc(s, 1, dimMissing && !spiceOpen(s) ? "dim" : "")).join("")}</span>`;
+function renderDiscovery(){
+  const kv = $("#discK").value;
+  $("#discK").innerHTML = `<option value="">${esc(L.disc_all)}</option>` + [...Array(NK).keys()].filter(ownedKitchen).map(k => `<option value="${k}">${L.k} ${k + 1}</option>`).join("");
+  $("#discK").value = $("#discK").querySelector(`option[value="${kv}"]`) ? kv : "";
+  // kitchens searching right now
+  let now = "";
+  if (acct) {
+    const rk = acct.kit.map((kt, k) => ({ kt, k })).filter(x => x.kt.st === 3);
+    now = `<h3 class="sub">${L.disc_now}</h3>` + (rk.length ? `<div class="tablebox"><table><tbody>` + rk.map(({ kt, k }) => {
+      const list = possible(kt.sp), req = fireReq(list), flv = fireLvOf(kt.acc, req), r = roll(list, kLuck(k), flv, known), b = bestLevel(list, kFire(k), kLuck(k), null);
+      return `<tr><td class="l">${L.k} ${k + 1}</td><td class="l">${comboHTML(kt.sp.filter(s => s >= 0))}</td><td class="l">${plates(list)}</td><td class="l">${spr("fire", Math.min(11, flv), 1)} ${L.fire_lv(flv)}</td>`
+        + `<td class="l wrap">${list.every(known) ? `<span class="chip bad">${L.zero_new}</span>` : flv < 1 ? L.need_fire(dur((req - kt.acc) / kFire(k)), pct(roll(list, kLuck(k), 1, known).any)) : `<span class="chip ok">${L.claim_now(pct(r.any))}</span>`}${b ? "<br>" + L.best_at(dur(b.e)) : ""}</td></tr>`;
+    }).join("") + `</tbody></table></div>` : `<p class="note">${L.disc_none}</p>`);
+  }
+  $("#discNow").innerHTML = now;
+  const { targets, anyTop } = discover();
+  const sl = showLocked();
+  const rows = Object.keys(targets).map(Number).map(m => Object.assign({ m }, targets[m])).sort((a, b) => (a.tag === b.tag ? 0 : a.tag === "own" ? -1 : 1) || a.b.e - b.b.e);
+  const hidden = rows.filter(r => r.tag === "all").length;
+  const vis = rows.filter(r => r.tag === "own" || sl);
+  const undisc = D.meals.map((_, i) => i).filter(i => !known(i));
+  let h = `<thead><tr><th class="l">${L.th_meal}</th><th class="l">${L.th_combo}</th><th class="l">${L.th_poss}</th><th>${L.th_kit}</th><th>${L.th_chance}</th><th>${L.th_try}</th><th>${L.th_exp}</th></tr></thead><tbody>`;
+  if (!undisc.length) h += `<tr><td class="l note" colspan="7">${L.disc_done}</td></tr>`;
+  for (const r of vis) {
+    h += `<tr class="${r.tag === "all" ? "locked" : ""}"><td class="l nm"><div class="nmw">${mealIc(r.m, 2)}<div>${esc(mName(r.m))}<small>${esc(mDesc(r.m, D.meals[r.m].base))}</small></div></div></td>`
+      + `<td class="l">${comboHTML(r.c, true)}${r.tag === "all" ? `<br><span class="chip bad">${L.th_need}: ${r.c.filter(s => !spiceOpen(s)).map(s => s + 1).join(", ")}</span>` : ""}</td>`
+      + `<td class="l">${plates(r.list, r.m)}</td><td class="num">${r.k + 1}</td>`
+      + `<td class="num">${pct(r.b.p)}</td><td class="num">${dur(r.b.t)}</td><td class="num"><b>${dur(r.b.e)}</b></td></tr>`;
+  }
+  const unreachable = undisc.filter(m => !targets[m]).length;
+  if (hidden && !sl) h += `<tr><td class="l note" colspan="7">${L.disc_more(hidden)}</td></tr>`;
+  if (unreachable && !sl && !hidden && undisc.length && !vis.length) h += `<tr><td class="l note" colspan="7">${L.disc_more(unreachable)}</td></tr>`;
+  $("#discTbl").innerHTML = h + "</tbody>";
+  $("#anyTbl").innerHTML = `<thead><tr><th class="l">${L.th_combo}</th><th class="l">${L.th_poss}</th><th>${L.th_kit}</th><th>${L.th_chance}</th><th>${L.th_try}</th><th>${L.th_exp}</th></tr></thead><tbody>`
+    + (anyTop.length ? anyTop.map((x, n) => `<tr class="${n ? "" : "best"}"><td class="l">${comboHTML(x.c)}</td><td class="l">${plates(x.list)}</td><td class="num">${x.k + 1}</td><td class="num">${pct(x.b.p)}</td><td class="num">${dur(x.b.t)}</td><td class="num"><b>${dur(x.b.e)}</b></td></tr>`).join("")
+      : `<tr><td class="l note" colspan="6">${undisc.length ? L.disc_more(undisc.length) : L.disc_done}</td></tr>`) + "</tbody>";
+}
+function renderAdvice(){
+  const tips = [], sl = showLocked();
+  if (acct) {
+    const idle = acct.kit.filter(k => k.st === 1).length; if (idle) tips.push(L.tip_idle(idle));
+    if (acct.kit.some(kt => kt.st === 3 && possible(kt.sp).every(known))) tips.push(L.tip_zero);
+    if (acct.art13 > 0) {
+      const q = acct.qty[0], c = costNext(0, acct.lv[0], true);
+      tips.push(L.tip_turkey({ tier: acct.art13, q: big(q), b: triag(q).toFixed(1), c: big(c), b2: triag(Math.max(0, q - c)).toFixed(1) }));
+    } else tips.push(L.tip_turkey0);
+    if (!acct.ach(224)) tips.push(L.tip_ach224);
+    if (!acct.ach(225)) tips.push(L.tip_ach225);
+    if (acct.ach(224) && acct.ach(225)) tips.push(L.tip_ach_ok);
+    if (acct.lv.some(v => v > 0 && v < 11)) tips.push(L.tip_11);
+    const res = reserves(), mx = maxLv(), free = [];
+    for (let i = 0; i < NM; i++) if (known(i)) {
+      const keep = (acct.lv[i] < mx ? costNext(i, acct.lv[i], true) : 0) + (res[i] || 0), f = acct.qty[i] - keep;
+      if (f >= 1) free.push(`${esc(mName(i))} ${big(f)}`);
+    }
+    if (free.length) tips.push(L.tip_free(free.join("; ")));
+    if (acct.ladles) tips.push(L.tip_ladle(big(acct.ladles)));
+  }
+  tips.push(L.tip_speedfirst);
+  $("#tips").innerHTML = tips.map(t => `<li>${t}</li>`).join("");
+  const row = (x, n, owned, extra) => {
+    const haveM = acct ? acct.qty[x.meal] : 0, haveS = acct ? Math.max(0, acct.spice[x.spice]) : 0;
+    const okM = haveM >= x.mq, okS = haveS >= x.sq;
+    const st = owned ? `<span class="chip info">${L.st_bought}</span>` : !acct ? "" : okM && okS ? `<span class="chip ok">${L.st_ready}</span>`
+      : `<span class="chip bad">${L.st_miss([!okM ? big(x.mq - haveM) + " " + esc(mName(x.meal)) : "", !okS ? big(x.sq - haveS) + " " + esc(sName(x.spice)) : ""].filter(Boolean).join(", "))}</span>`;
+    return `<tr class="${acct && !known(x.meal) ? "locked" : ""}"><td class="l nm"><div class="nmw"><div><b>${esc((lang === "ru" && x.ru) || x.en)}</b><small>${esc((lang === "ru" && x.dru) || x.d)}</small></div></div></td>`
+      + `<td class="num">${mealIc(x.meal, 1)} ${acct ? big(haveM) + " / " : ""}${big(x.mq)}</td><td class="num">${spiceIc(x.spice, 1)} ${acct ? big(haveS) + " / " : ""}${big(x.sq)}</td>${extra || ""}<td class="l">${st}</td></tr>`;
+  };
+  const vis = x => sl || !acct || (known(x.meal) && spiceOpen(x.spice));
+  $("#jewTbl").innerHTML = `<thead><tr><th class="l">${L.th_item}</th><th>${L.th_meals}</th><th>${L.th_spice}</th><th class="l">${L.th_status}</th></tr></thead><tbody>`
+    + D.jewels.map((j, n) => vis(j) ? row(j, n, acct && acct.jewel[n] === 1) : "").join("") + "</tbody>";
+  $("#chipTbl").innerHTML = `<thead><tr><th class="l">${L.th_item}</th><th>${L.th_meals}</th><th>${L.th_spice}</th><th>${L.th_chip_have}</th><th class="l">${L.th_status}</th></tr></thead><tbody>`
+    + D.chips.map((c, n) => vis(c) ? row(c, n, false, `<td class="num">${acct ? Math.max(0, acct.chip[n] || 0) : L.na}</td>`) : "").join("") + "</tbody>";
+}
+function renderAll(){
+  renderStats(); renderSettings(); renderKitchens(); renderGoal(); renderPlan(); renderMeals(); renderDiscovery(); renderAdvice();
+}
+
+// ---------- tooltip ----------
+const tip = $("#tip");
+function tipHTML(el){
+  if (el.dataset.meal != null) {
+    const i = +el.dataset.meal, m = D.meals[i];
+    return `<div class="hd">${spr("meal", i, 2)}<div><b>${esc(mName(i))}</b>${lang === "ru" && m.ru ? `<div class="t">${esc(m.en)}</div>` : ""}</div></div>`
+      + `<div>${esc(mDesc(i, m.base))} / ${lang === "ru" ? "ур." : "lv"}</div><div class="t">req ${big(m.req)} · ${acct ? (known(i) ? `Lv ${acct.lv[i]}, ${big(acct.qty[i])}` : "🔒") : ""}</div>`;
+  }
+  const s = +el.dataset.spice;
+  return `<div class="hd">${spr("spice", s, 2)}<div><b>${esc(sName(s))}</b></div></div>${acct ? `<div class="t">${spiceOpen(s) ? big(acct.spice[s]) : "🔒"}</div>` : ""}`
+    + `<div class="t">→ ${esc(mName(D.single[s]))}</div>`;
+}
+function placeTip(x, y){
+  const rc = tip.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(x + 14, innerWidth - rc.width - 8)) + "px";
+  const below = y + 16, above = y - rc.height - 10;
+  tip.style.top = Math.max(8, Math.min(below + rc.height <= innerHeight - 8 ? below : above, innerHeight - rc.height - 8)) + "px";
+}
+let tipFor = null;
+document.addEventListener("mouseover", e => {
+  const el = e.target.closest("[data-meal],[data-spice]");
+  if (!el) { tip.hidden = true; tipFor = null; return; }
+  if (tipFor !== el) { tipFor = el; tip.innerHTML = tipHTML(el); tip.hidden = false; }
+  placeTip(e.clientX, e.clientY);
+});
+document.addEventListener("mousemove", e => { if (!tip.hidden) placeTip(e.clientX, e.clientY); });
+addEventListener("scroll", () => { tip.hidden = true; tipFor = null; }, true);
+
+// ---------- events ----------
+const NUMS = ["spdMul", "fireMul", "maxLv", "bonusMul"];
+for (const id of NUMS) $("#" + id).addEventListener("change", () => { store.set("ck-" + id, $("#" + id).value); renderAll(); });
+$("#calGo").addEventListener("click", () => { const k = +$("#calK").value, v = parseFloat($("#calV").value); if (v > 0) { $("#spdMul").value = +(v / kSpeedPart(k, acct ? acct.lv : D.meals.map(() => 0))).toPrecision(5); store.set("ck-spdMul", $("#spdMul").value); renderAll(); } });
+$("#calGof").addEventListener("click", () => { const k = +$("#calKf").value, v = parseFloat($("#calVf").value); if (v > 0) { $("#fireMul").value = +(v / kFirePart(k)).toPrecision(5); store.set("ck-fireMul", $("#fireMul").value); renderAll(); } });
+for (const id of ["showLocked", "useRecipeKitchens", "mixSpeed"]) {
+  const el = $("#" + id), v = store.get("ck-" + id); if (v != null) el.checked = v === "1";
+  el.addEventListener("change", () => { store.set("ck-" + id, el.checked ? "1" : "0"); renderAll(); });
+}
+$("#goal").addEventListener("change", () => { store.set("ck-goal", $("#goal").value); renderPlan(); });
+$("#steps").addEventListener("change", renderPlan);
+$("#cat").addEventListener("change", renderMeals);
+$("#discK").addEventListener("change", renderDiscovery);
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; store.set("ck-lang", lang); applyLang(); }));
+
+function showMsg(kind, key, arg){
+  lastMsg = [kind, key, arg];
+  const v = L[key];
+  $("#msg").className = kind === "err" || kind === "errf" ? "msg err" : "msg";
+  $("#msg").textContent = kind === "err" ? L.e_fail + (L[arg] || arg) : (typeof v === "function" ? v(arg) : v);
+}
+function setAccount(a){
+  acct = a; acctVer++;
+  for (const id of NUMS) { const v = store.get("ck-" + id); $("#" + id).value = v != null ? v : ""; }
+  if (!$("#spdMul").value) $("#spdMul").value = 1;
+  if (!$("#fireMul").value) $("#fireMul").value = 1;
+  if (!$("#bonusMul").value) $("#bonusMul").value = a && a.jewel[16] === 1 ? 1.16 : 1;
+  if (!$("#maxLv").value) $("#maxLv").value = Math.max(30 + (a ? D.causticolumn * a.art17 : 0), a ? Math.max(...a.lv) : 0);
+  renderAll();
+}
+function load(text, key, arg){
+  try { const a = parseSave(text); setAccount(a); showMsg("ok", key || "ok_n", arg); return true; }
+  catch (e) { showMsg("err", null, e.message === "nokey" ? "e_nokey" : e.message); return false; }
+}
+const isNick = s => /^[A-Za-z0-9_\-]{2,30}$/.test(s.trim());
+async function loadNick(name){
+  name = name.trim();
+  if (!isNick(name)) return;
+  $("#nick").value = name;
+  const btn = $("#nickBtn"); btn.disabled = true;
+  showMsg("ok", "nick_loading", name);
+  try {
+    const r = await fetch(`https://cdn.idleonefficiency.com/profiles/${encodeURIComponent(name.toLowerCase())}.json?t=${Date.now()}`, { cache: "no-store" });  // the CDN keeps profiles up to 30 min; the query skips stale copies
+    if (!r.ok) { showMsg("errf", "e_nick", { name, status: r.status }); return; }
+    const lm = Date.parse(r.headers.get("last-modified") || ""), when = isNaN(lm) ? "" : new Date(lm).toLocaleString(loc(), { dateStyle: "short", timeStyle: "short" });
+    if (load(await r.text(), "ok_nick", { name, when })) {
+      store.set("ck-nick", name); store.set("ck-src", "nick"); store.del("ck-save");
+      try { history.replaceState(null, "", "#" + encodeURIComponent(name)); } catch(e){}
+    }
+  } catch (e) { showMsg("errf", "e_nickfail", { name, err: e.message }); }
+  finally { btn.disabled = false; }
+}
+$("#nickForm").addEventListener("submit", e => { e.preventDefault(); loadNick($("#nick").value); });
+$("#go").addEventListener("click", () => {
+  const t = $("#save").value;
+  if (isNick(t)) { loadNick(t); return; }
+  if (load(t)) { store.set("ck-save", t); store.set("ck-src", "raw"); $("#save").value = ""; try { history.replaceState(null, "", location.pathname); } catch(e){} }
+});
+$("#save").addEventListener("paste", () => setTimeout(() => $("#go").click(), 0));
+$("#file").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { $("#save").value = t; $("#go").click(); }); e.target.value = ""; });
+$("#forget").addEventListener("click", () => {
+  for (const k of ["ck-save","ck-src","ck-nick"]) store.del(k);
+  $("#nick").value = ""; try { history.replaceState(null, "", location.pathname); } catch(e){}
+  setAccount(null); showMsg("ok", "forgot");
+});
+
+setAccount(null);
+applyLang();
+const hashNick = decodeURIComponent(location.hash.slice(1)), savedNick = store.get("ck-nick");
+if (isNick(hashNick)) loadNick(hashNick);
+else if (store.get("ck-src") === "nick" && savedNick) loadNick(savedNick);
+else { const s = store.get("ck-save"); if (s) load(s, "ok_saved"); }
+</script>
+</body>
+</html>
