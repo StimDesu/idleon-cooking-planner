@@ -102,6 +102,9 @@ def account_calc(njs, rl, assets):
         "mapKills": [num(m[0][0]) for m in L("MapDetails")],
         "pristine": {t: num(re.search(r'NjTrP%s="([^"]+)"' % t, njs).group(1).split(" ")[3]) for t in ("8", "17")},  # CustomMaps NjEQ
         "starSigns": [s[0] for s in L("StarSigns")],
+        "holes": {"mon": [num(x) for x in L("HolesInfo")[37]], "cosmo00": num(L("CosmoUpgrades")[0][0][0]),
+                  "fount013": num(L("HoleFountUPG")[0][13][6]),
+                  "lamp": [[num(v) for v in g.split(",")] for g in re.search(r'HoleozDT="([0-9,;]+)"', njs).group(1).split(";")]},
     }
 
 
