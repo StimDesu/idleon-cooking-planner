@@ -436,3 +436,37 @@ grep по `N.js` с `.{0,N}` очень медленный (одна огром�
    - ключи DNSM-карт (`AlchBubbles.h.KEY`, `AlchVials.h.KEY`, `StampBonusOfTypeX("KEY")`, `MealBonus("KEY")`, `CardBonusREAL`, `StarSigns.h.KEY`, `EtcBonuses("N")`) совпадают с ключами из индекса;
    - поиск `"KEY"` в `N.js` находит формулу, куда ключ входит.
 4. **Предлагаемая структура данных советчика**: `stat → [{source_type, list, index, key, text, level_formula, current_level(save path), how_to_raise}]`. Индекс уже даёт первые 5 полей; формулы уровня — раздел 2; пути в сохранении — раздел 1.
+
+---
+
+## 7. Характеристики персонажа и шанс добычи — `TotalStats(e)` (порт: idleon-stat-finder)
+
+Порт живёт в `D:\git\idleon-stat-finder\src\template.html`: `model()` (карты бонусов игры), `statFormula()`, `dropFormula()`.
+
+**STR/AGI/WIS/LUK** [≈]:
+- снаряжение + инструменты (`EquipmentOrder[0]` — 16 слотов, `[1]` — 8), item stat + `EquipmentMap` stat;
+  × `(1 + (Tal(96|276|456|21) + Stamp("Pct<STAT>"))/100)`;
+- оболы (`ScrollCircleINFO[43]`) × `(1 + (Tal(111|291|486|36) + 40·SuperBit2)/100)`;
+- итог: `floor(Bubble("Total<STAT>") + Tal652 + Comp8 + (1 + %/100) · плоская_часть)`;
+- `%` = Etc(57|25|58|17) + Etc46 + AllStatPCT + Pristine(4|1|10|5) + StarSign pct<STAT> (+ Tal 143/368/533 и пузыри W8/A9/M9 у STR/AGI/WIS);
+- плоская часть: Tal(10..13), getbonus2(51..54), Stamp Base<STAT>/BaseAllStat, Etc(51..54), Fam(14|38|62|4), знаки, Card(9|7|5|2),
+  Sigil(0..3), пузырь W4/A4/M4 (× ⌊карт/100⌋), Arcade(19..22), AllStat (почта 20a + блюда Stat + гильдия 1),
+  почта (21b/22b/23b/15c/LUK), сияющие питомцы, сова, мерцание, TalentCalc(620) — [—].
+- **Галереи W7** (трофеи, именные таблички, премиум-шапки, плащи) добавляют к статам и Etc — [—].
+
+**Шанс добычи** `"Drop_Rarity"` [≈]:
+- `LUKdr = LUK<1000 ? ((LUK+1)^0.37 − 1)/40 : (LUK−1000)/(LUK+2500)·0.5 + 0.297`;
+- `DR = 1.4·LUKdr + (Σ слагаемых)/100 + 1`, при DR<5 + чип "dr" (не выше 5); +0.3 при `OptLacc[232]≥1`;
+- далее множители: Card(101), Fam32, Comp168·0.3, Comp132, Etc99, Etc91, облако 69, Pristine3, флакон `7drMulto`, Comp26/160/50,
+  тессеракт, статуя RG, менажерея, суши/желе, minehead, том, наборы, верстак [—].
+- Σ: Tal279, Tal24, Tal655·OptLacc[189], Etc2+Etc102, пузырь DropRate, Card(10), CardSet 5/6, знак Drop, Guild10, Shrine4, Prayer(7),
+  Sigil11, Arcade27, Comp3/50/132, Stamp DropRate, 5·Dream[10], карты mini5a/caveC/caveD/anni4Event1/luckEvent1, Ach377/381,
+  Grim44, Vault18, Comp22/158/111; почта, shiny, WinBonus9, Tome2, Grid173, золотая еда, сова, Lank, голосование и др. [—].
+
+**Вспомогательные** (все в `model()`):
+- `AllTalentLV` (бонусные уровни талантов) = Tal149+374+539 + Ach291 + Fam68 + Comp1 + Dream[12] + 5·⌊(97+OptLacc232)/100⌋ + Grim39 + min(5, Arcane57) + супербит 47; [—] божество, сеты, super talents (Spelunk[20+n]).
+- `StampBonusOfTypeX`: подстрока ключа в `desc_line1`; навыковые марки — `StampOverLevel` (≥3: `3+(st−3)·(lv/(st−3))^0.75`); ×2 MF7 для A/B; ×Pristine17 для A/B; ×Vault16 для BaseDmg/HP/Acc/Def; `Eff` × Tal625.
+- `CardBonusS`: надетые `CardEquip` (10 слотов), чип card1/card2 удваивает слот 1/8, ключ = текст бонуса карты; `CardBonusREAL(n)` через `CustomMaps.IDforCardBonus`.
+- `EtcBonuses(n)`: UQ-тексты надетого снаряжения/оболов через `IDforETCbonus`; чипы pend/key1/troph удваивают слоты 4/10/11.
+- `StarSigns`: таблица знак → [ключ, число] вынимается regex-ом из `v.StarSigns` (61 из 94 знаков); бесконечные знаки при Rift≥10; чип "star" удваивает.
+- `FamBonusQTYs[2·класс+I]`: максимум по персонажам по линии класса (`ReturnClasses`), уровень − `ClassAccountBonus[c][1]`.
