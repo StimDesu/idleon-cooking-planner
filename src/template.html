@@ -481,6 +481,7 @@ function f5(type, x1, x2, n){   // ArbitraryCode5Inputs
   }
 }
 const letter = i => C.n2l[i] || "";
+const getLOG = v => Math.log(Math.max(v, 1)) / 2.30259;   // the game's getLOG (not exactly log10)
 let labOn = true;   // the Mainframe graph (who is connected to what) is not in the save: owned jewels and bonuses count as active
 function acctCalc(){
   if (!acct) return null;
@@ -573,7 +574,7 @@ function acctCalc(){
     grim: Math.min(20, at(A("Grimoire"), 26) * C.grim26), menag: 10 * (menag[2] && at(menag[2], 20) >= 1 ? 1 : 0) };
   out.maxLvTotal = Object.values(out.maxLv).reduce((a, b) => a + b, 0);
   const holes = A("Holes") || [], H = C.holes, hv = (r, i) => at(holes[r], i);
-  const lg = v => v > 0 ? Math.log10(v) : 0;
+  const lg = getLOG;
   // W5 caverns: Monument bonus (MonumentROGbonuses 0,2), Bolaia upgrade 56 (B_UPG), Lamp (LampBonuses 0,0)
   const fount = i => { const m = at((holes[32] || [])[0], i); return Math.round((m === 0 ? 1 : 1.5 + .5 * m) * at((holes[31] || [])[0], i) * (i === 13 ? H.fount013 : 0)); };
   const monVal = (t, i, mul) => { const base = H.mon[10 * t + i], lv = hv(15, 10 * t + i);
@@ -605,7 +606,7 @@ function catSums(lv){ const s = {}; for (let i = 0; i < NM; i++) if (lv[i] > 0) 
 function costBase(lv){ return (10 + lv + lv * lv) * Math.pow(1.2 + .05 * lv, lv) * Math.pow(10, 22 * Math.floor((lv + 1000) / 1111)) * Math.pow(1 + .4 * Math.floor((lv + 1000) / 1111), lv); }
 const costNext = (i, lv, first) => costBase(lv) * calcOr(c => c.costMul * (first ? c.costFirst : 1), 1);
 const maxLv = () => calcOr(c => c.maxLvTotal, 30);
-const triag = turkeys => acct && acct.art13 > 0 ? D.triagulon * acct.art13 * Math.log10(Math.max(1, turkeys)) : 0;
+const triag = turkeys => acct && acct.art13 > 0 ? D.triagulon * acct.art13 * getLOG(turkeys) : 0;
 const charFarm = () => acct ? (acct.chars[charSel()] || {}).farm || 0 : 0;
 // CookingSPEED of kitchen k for given meal levels / meal stock; parts = [label key, multiplier, detail] for the breakdown
 function kSpeedParts(k, lv, qty){
