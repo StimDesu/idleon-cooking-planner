@@ -484,3 +484,20 @@ grep по `N.js` с `.{0,N}` очень медленный (одна огром�
 - L5 (множители): (1+9·Comp37)(1+Comp33)(1+4·Comp160)(1+Comp32)(1+0.4·Comp168)(1+Comp34)(1+Comp145)(1+min(.5,Comp128))(1+0.1·SuperBit63)·…,
   Etc84, Card(100), Arcade60, флакон `7classexp`, CardSet12, облако 70, 1.03^len(Spelunk[6]) при супербите 24; остальное [—].
 - `StatueBonusGiven(t)` = lv·StatueInfo[t][3] × таланты группы (0,2,8,7: 112/127; 1,11,9,14: 292/307; 10,6,12,13: 487/472; 3,5,17: 37) × onyx (StuG≥2: 1+(100+Art30)/100) × zenith (≥3).
+
+**Ещё порты (idleon-stat-finder, `FORMULAS` в template.html), коротко где искать в N.js:**
+
+| Стат | Функция игры | Порт |
+|---|---|---|
+| Защита, точность, сила оружия | `TotalStats("Defence" / "Accuracy" / "Weapon_Power")` | `defFormula`, `accFormula`, `wpFormula` |
+| Макс. HP / MP | `PlayerHPmax`, `PlayerMPmax` (HP: (15 + … + (STR·(1+T95))^1.05) × множители) | `hpFormula`, `mpFormula` |
+| Шанс / урон крита | `CritChance` (AGI-кривая /2.3), `CritDamage` (1.2 + STR-кривая /1.8) | `critcFormula`, `critdFormula` |
+| Скорость передвижения | `PlayerSpeedBonus` (AGI^0.4-кривая /2.2; потолки 175% / 200%) | `moveFormula` |
+| Эффективность / опыт всех навыков | `SkillStats("AllEfficiencies" / "AllBaseSkillEff" / "AllSkillxpz" / "AllSkillxpMULTI")` | `skillEffFormula`, `skillExpFormula` |
+| Добыча/рубка/рыбалка/ловля: эффективность, опыт, мульти | `SkillStats("<Skill>Efficiency" / "<Skill>EXPmulti" / "<Skill>MultiOre")`; сила инструмента = `EquipmentOrder[1][0..3]` | `effFormula`, `sexpFormula`, `multiFormula` |
+| Ловушки, поклонение, опыт лаборатории | `skillstats2(...)` | `trapEffFormula`, `trapExpFormula`, `worshipFormula`, `labExpFormula` |
+| Монеты с монстров | `ArbitraryCode("MonsterCash")` (только множители) | `coinsFormula` |
+| AFK в бою | `AFKgainrates("Fighting")` = (0.4 + Σ/100) × Etc92 | `fightAfkFormula` |
+| Макс. урон | `DamageDealed("Max")` = L0 · L1 · L2; L0: (WP·T/3)² + главный стат (по `ClassStatTypes` базового класса) …, мягкие потолки 4000/15000; L1 мягкие потолки ×100/2e6/1e8; L2: первые множители смягчаются (×100, 2e7, 5e8, 2e9, 15e9, 6e10), затем остальные | `dmgFormula` |
+
+Опыт кулинарии и лаборатории в игре ещё зависят от «эффективность / (10 · Defence монстра)»^0.25 — эта часть не перенесена.
