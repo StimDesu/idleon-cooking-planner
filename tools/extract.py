@@ -45,6 +45,66 @@ def sheet(assets, names, cell, cols, out):
     return {"w": cell[0], "h": cell[1], "cols": cols}
 
 
+def game_mbs_letters(assets):
+    """Number2Letter as stored in assets/data/game.mbs: a list of 1-char strings ('_', a..z, A..Z)."""
+    import gzip
+    e = assets.ent["assets/data/game.mbs"]
+    raw = assets.pak[e["position"]:e["position"] + e["length"]]
+    try:
+        raw = gzip.decompress(raw)
+    except OSError:
+        pass
+    i = raw.find(b"Number2Letter")
+    m = re.search(rb"(?:\x00\x00\x00\x01(.))+", raw[i:i + 2000])
+    return [c.decode() for c in re.findall(rb"\x00\x00\x00\x01(.)", m.group(0))]
+
+
+def account_calc(njs, rl, assets):
+    """Constants for the account-wide multipliers of CookingSPEED / CookingFIRE / meal bonus / max level."""
+    import items as itemdefs  # noqa: F401  (item definitions: stamps)
+    L = lambda n: literal(njs, n)
+    alch = L("AlchemyDescription")
+    fx = lambda r: [num(r[1]), num(r[2]), r[3]]          # x1, x2, formula type of ArbitraryCode5Inputs
+    vials = {}
+    for i, r in enumerate(alch[4]):
+        key = r[11] if len(r) > 11 else ""
+        if key in ("MealCook", "RecCook", "Kcosts", "6CookSpd", "6turtle"):
+            vials.setdefault(key, []).append([i] + fx(r))
+    stamps = {}
+    for k, d in itemdefs.parse(njs).items():
+        m = re.match(r"Stamp([ABC])(\d+)$", k)
+        f = str(d.get("desc_line1", "")).split(",")
+        if m and f[0] in ("MealCook", "RecipeCook"):
+            stamps[f[0]] = ["ABC".index(m.group(1)), int(m.group(2)) - 1, f[1], num(f[2]), num(f[3]), num(f[4]), num(f[10])]
+    cards = {r[0]: num(r[2]) for grp in L("CardStuff") for r in grp if isinstance(r, list) and len(r) > 2 and r[0] in ("Boss4A", "w6c1")}
+    se = L("SummonEnemies")
+    comp = L("CompanionDB")
+    uv = L("UpgradeVault")
+    tal = L("TalentDescriptions")
+    sig = L("SigilDesc")[18]
+    arc = L("ArcadeShopInfo")
+    letters = game_mbs_letters(assets)
+    tourny = [x for row in L("TournyStuff") for x in row]
+    return {
+        "n2l": letters + tourny,
+        "diamondChef": fx(alch[3][17]), "vials": vials, "vialCount": len(alch[4]), "stamps": stamps,
+        "arcade": {i: fx(arc[i]) for i in (28, 54)},
+        "atom8": num(L("AtomInfo")[8][4]),
+        "vault": {i: num(uv[i][5]) for i in (42, 54, 61, 89)},
+        "talent59": fx([None] + tal[59][1][0:3]), "talent49": fx([None] + tal[49][1][0:3]),
+        "cards": cards,
+        "summon": {"name": se[0], "bonus": se[5], "val": se[7], "endBonus": se[9], "endVal": se[10]},
+        "comp": {i: [num(comp[i][2]), num(comp[i][11])] for i in (27, 88, 162)},
+        "research58": [num(x) for x in L("Research")[58]],
+        "grim26": num(L("GrimoireUpg")[26][5]),
+        "sigil18": [num(sig[3]), num(sig[4]), num(sig[8]), num(sig[10]), num(sig[12])],
+        "crucWaves": [int(x) for x in rl[115]],
+        "mapKills": [num(m[0][0]) for m in L("MapDetails")],
+        "pristine": {t: num(re.search(r'NjTrP%s="([^"]+)"' % t, njs).group(1).split(" ")[3]) for t in ("8", "17")},  # CustomMaps NjEQ
+        "starSigns": [s[0] for s in L("StarSigns")],
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default=r"D:\Games\SteamLibrary\steamapps\common\Legends of Idleon")
@@ -86,6 +146,8 @@ def main():
     chips = costs(literal(njs, "ChipDesc"), 0, 5, 6, 7, 8, 2, 3, 4)
     art = literal(njs, "ArtifactInfo")
 
+    calc = account_calc(njs, rl, assets)
+
     os.makedirs(os.path.join(ROOT, "img"), exist_ok=True)
     spr = {
         "meal": sheet(assets, ["CookingM%d" % i for i in range(len(meals))], (41, 32), 10, "meals.png"),
@@ -103,7 +165,7 @@ def main():
         "single": [int(x) for x in rl[49]], "odds": [float(x) for x in rl[50]], "arenaWaves": [int(x) for x in rl[53]],
         "kitchenCoins": [0, 82e5, 75e6, 4e8, 8e9, 5e10, 213e10, 6e13, 2e15, 1e17],  # CookingNewKitchenCoinCost
         "jewels": jewels, "chips": chips,
-        "triagulon": num(art[13][3]), "causticolumn": num(art[17][3]),
+        "triagulon": num(art[13][3]), "causticolumn": num(art[17][3]), "calc": calc,
         "ui": {k: tr(k) for k in ["New_Recipe_Chance:_Utmost_Certainty", "New_Recipe_Chance:_Almost_Certain",
                                    "New_Recipe_Chance:_Very_Likely", "New_Recipe_Chance:_Likely", "New_Recipe_Chance:_Unlikely",
                                    "New_Recipe_Chance:_Very_Unlikely", "New_Recipe_Chance:_Nearly_Impossible",

@@ -14,7 +14,9 @@ The page picks English or Russian from your browser language; the EN/RU switch i
 
 ## Accuracy
 
-The page computes the cooking-specific part of every formula from the save. Cooking speed and fire speed also depend on ~25 account-wide multipliers (bubbles, vials, stamps, atoms, cards…). Type the speed a kitchen shows in the game into “Account multipliers” and the page derives the rest. Relative choices (which meal, which spices) don't depend on it, only the times do.
+Everything is computed from the save, no numbers from the game screen are needed. The “Where the speed comes from” card shows every multiplier of the kitchen speed and fire speed (kitchen upgrades, meals, Diamond Chef bubble, vials, stamps, arcade, vault, cards, star sign, artifacts, atoms, Summoning, Menagerie, talents…), the meal max level, the meal bonus multiplier and the costs, each ported from the game code.
+
+Not counted yet: the current vote (it lives on the server), W5 caverns (Monument, Lamp, Bolaia), Exalted stamps, bonus talent levels, Emperor/Godshard sets, shiny pets, Minehead. The save doesn't say which Lab Mainframe bonuses are connected, so bought jewels and the Mainframe bonuses count as active while the Lab box is ticked. Character-bound bonuses (star sign, Farming level) use the character picked in that card; by default the one with the fastest kitchen.
 
 ## How to get your save
 
