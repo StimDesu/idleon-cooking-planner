@@ -470,3 +470,17 @@ grep по `N.js` с `.{0,N}` очень медленный (одна огром�
 - `EtcBonuses(n)`: UQ-тексты надетого снаряжения/оболов через `IDforETCbonus`; чипы pend/key1/troph удваивают слоты 4/10/11.
 - `StarSigns`: таблица знак → [ключ, число] вынимается regex-ом из `v.StarSigns` (61 из 94 знаков); бесконечные знаки при Rift≥10; чип "star" удваивает.
 - `FamBonusQTYs[2·класс+I]`: максимум по персонажам по линии класса (`ReturnClasses`), уровень − `ClassAccountBonus[c][1]`.
+
+**Опыт класса** `ExpMulti(0)` [≈] (порт: `expFormula()`):
+- `LUKx = LUK<1000 ? ((LUK+1)^0.37−1)/30 : (LUK−1000)/(LUK+2500)·0.8 + 0.3963`;
+- итог = верстак · (1+L3/100) · L5 · (1+Etc78/100) · (LUKx·(1+Tal35/100)/1.8 + Σ/100 + 1);
+- Σ: Etc4, почта monsterExp, еда ClassEXP, знак MainXP, флаконы MonsterEXP, пузырь expACTIVE, Card(44), L2, Statue10, Tal632, Shrine5,
+  SaltLick3, Prayer(0)+Prayer(2)−Prayer(9, проклятие), флурбо 2, Ach57+20·Ach357+3·Ach61+2·Ach124+5·Ach188+25·Ach286, Arcade12, Sigil8,
+  shiny1, MSA4, getbonus2(55), L6;
+- L2: самый низкий по уровню персонаж (строго ниже всех) получает 3·`TaskZZ2[0][2]` + Vault12 (и L3=50 при супербите 19); <50 ур. CardSet0;
+  <120 ур. блюда Clexp; `WeeklyBoss.c` (≤150); +150/100/50 до 10/30/50 ур.; божество; CardSet5;
+- L4 = Compass51 + B_UPG47 + WinBonus23 + Grim24 + Vault3 + Vault35·getLOG(OptLacc[345]) + B_UPG83;
+- L6 = 2·CardLv(springEvent1) + Comp3+50+47+111+128 + OptLacc[421] + Stamp classxp + L4 + (сова, голосование, монумент, сеты, экзотика, друзья, мерцание, minehead) [—];
+- L5 (множители): (1+9·Comp37)(1+Comp33)(1+4·Comp160)(1+Comp32)(1+0.4·Comp168)(1+Comp34)(1+Comp145)(1+min(.5,Comp128))(1+0.1·SuperBit63)·…,
+  Etc84, Card(100), Arcade60, флакон `7classexp`, CardSet12, облако 70, 1.03^len(Spelunk[6]) при супербите 24; остальное [—].
+- `StatueBonusGiven(t)` = lv·StatueInfo[t][3] × таланты группы (0,2,8,7: 112/127; 1,11,9,14: 292/307; 10,6,12,13: 487/472; 3,5,17: 37) × onyx (StuG≥2: 1+(100+Art30)/100) × zenith (≥3).
